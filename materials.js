@@ -1,149 +1,95 @@
-// Categorized materials list - representative sample from each category
-const materials = [
-  // Everyday Basics
+// Unit types
+const UNIT_TYPES = {
+  EACH: "each",
+  BOX: "box",
+  ROLL: "roll",
+  SQUARE: "square",
+  BUNDLE: "bundle",
+  GALLON: "gallon"
+};
+
+// Human-readable labels for units
+function getHumanLabel(unitType) {
+  const labels = {
+    [UNIT_TYPES.EACH]: "Each",
+    [UNIT_TYPES.BOX]: "Box",
+    [UNIT_TYPES.ROLL]: "Roll",
+    [UNIT_TYPES.SQUARE]: "Square",
+    [UNIT_TYPES.BUNDLE]: "Bundle",
+    [UNIT_TYPES.GALLON]: "Gallon"
+  };
+  return labels[unitType] || unitType;
+}
+
+// Material categories with items
+const materialCategories = [
   {
-    id: "INV0017225",
-    label: "Rags",
-    unit: "each",
-    category: "Everyday Basics",
-    categoryIndex: 1
+    id: "cat_roofing",
+    label: "Roofing",
+    items: [
+      { id: "mat_shingles_3tab", label: "3-Tab Shingles", unit: UNIT_TYPES.BUNDLE },
+      { id: "mat_shingles_arch", label: "Architectural Shingles", unit: UNIT_TYPES.BUNDLE },
+      { id: "mat_shingles_designer", label: "Designer Shingles", unit: UNIT_TYPES.BUNDLE },
+      { id: "mat_felt_15lb", label: "15# Felt", unit: UNIT_TYPES.ROLL },
+      { id: "mat_felt_30lb", label: "30# Felt", unit: UNIT_TYPES.ROLL },
+      { id: "mat_synthetic", label: "Synthetic Underlayment", unit: UNIT_TYPES.ROLL },
+      { id: "mat_starter", label: "Starter Strip", unit: UNIT_TYPES.BUNDLE },
+      { id: "mat_ridge_cap", label: "Ridge Cap", unit: UNIT_TYPES.BUNDLE }
+    ]
   },
   {
-    id: "INV0017337",
-    label: "Garbage Bags",
-    unit: "each",
-    category: "Everyday Basics",
-    categoryIndex: 2
+    id: "cat_flashing",
+    label: "Flashing",
+    items: [
+      { id: "mat_drip_edge", label: "Drip Edge", unit: UNIT_TYPES.EACH },
+      { id: "mat_step_flashing", label: "Step Flashing", unit: UNIT_TYPES.EACH },
+      { id: "mat_valley_flashing", label: "Valley Flashing", unit: UNIT_TYPES.EACH },
+      { id: "mat_pipe_boot", label: "Pipe Boot", unit: UNIT_TYPES.EACH },
+      { id: "mat_wall_flashing", label: "Wall Flashing", unit: UNIT_TYPES.EACH }
+    ]
   },
   {
-    id: "INV0017226",
-    label: "Pair of Gloves",
-    unit: "each",
-    category: "Everyday Basics",
-    categoryIndex: 3
-  },
-  
-  // Adhesives & Sealants
-  {
-    id: "INV0000602",
-    label: "NP1 Sealant Tube (Black)",
-    unit: "each",
-    category: "Adhesives, Sealants, Coatings, & Solvents",
-    categoryIndex: 1
+    id: "cat_ventilation",
+    label: "Ventilation",
+    items: [
+      { id: "mat_ridge_vent", label: "Ridge Vent", unit: UNIT_TYPES.ROLL },
+      { id: "mat_box_vent", label: "Box Vent", unit: UNIT_TYPES.EACH },
+      { id: "mat_power_vent", label: "Power Vent", unit: UNIT_TYPES.EACH },
+      { id: "mat_soffit_vent", label: "Soffit Vent", unit: UNIT_TYPES.EACH },
+      { id: "mat_intake_vent", label: "Intake Vent", unit: UNIT_TYPES.EACH }
+    ]
   },
   {
-    id: "INV0000599",
-    label: "NP1 Sealant Tube (White)",
-    unit: "each",
-    category: "Adhesives, Sealants, Coatings, & Solvents",
-    categoryIndex: 2
+    id: "cat_fasteners",
+    label: "Fasteners",
+    items: [
+      { id: "mat_nails_roofing", label: "Roofing Nails", unit: UNIT_TYPES.BOX },
+      { id: "mat_nails_galvanized", label: "Galvanized Nails", unit: UNIT_TYPES.BOX },
+      { id: "mat_screws", label: "Screws", unit: UNIT_TYPES.BOX }
+    ]
   },
   {
-    id: "INV0000081",
-    label: "JM Edge Sealant Bottle",
-    unit: "each",
-    category: "Adhesives, Sealants, Coatings, & Solvents",
-    categoryIndex: 3
-  },
-  
-  // Boards & ISO
-  {
-    id: "INV0001251",
-    label: "OSB - 7/16\" x 8ft",
-    unit: "per sheet",
-    category: "Boards & ISO",
-    categoryIndex: 1
+    id: "cat_adhesives",
+    label: "Adhesives & Sealants",
+    items: [
+      { id: "mat_caulk_roof", label: "Roof Caulk", unit: UNIT_TYPES.EACH },
+      { id: "mat_cement_plastic", label: "Plastic Cement", unit: UNIT_TYPES.GALLON },
+      { id: "mat_cement_wet", label: "Wet Patch Cement", unit: UNIT_TYPES.GALLON }
+    ]
   },
   {
-    id: "INV0001258",
-    label: "OSB - 3/4\" x 8ft",
-    unit: "per sheet",
-    category: "Boards & ISO",
-    categoryIndex: 2
-  },
-  
-  // EPDM Membrane
-  {
-    id: "INV0016960",
-    label: "EPDM R 45MIL [10ft x 100ft]",
-    unit: "per linear ft",
-    category: "EPDM Membrane, Tape, & Flashing Details",
-    categoryIndex: 1
-  },
-  {
-    id: "INV0016964",
-    label: "EPDM NR 45MIL [10ft x 100ft]",
-    unit: "per linear ft",
-    category: "EPDM Membrane, Tape, & Flashing Details",
-    categoryIndex: 2
-  },
-  
-  // Fasteners
-  {
-    id: "INV0000459",
-    label: "Galvalume-Coated Plate [2\"]",
-    unit: "each",
-    category: "Fasteners",
-    categoryIndex: 1
-  },
-  {
-    id: "INV0000460",
-    label: "Galvalume-Coated Plate [3\"]",
-    unit: "each",
-    category: "Fasteners",
-    categoryIndex: 2
-  },
-  
-  // Misc Other
-  {
-    id: "INV0000666",
-    label: "CL MetaLink Sealant Tube (Almond)",
-    unit: "each",
-    category: "Misc Other",
-    categoryIndex: 2
-  },
-  {
-    id: "INV0000683",
-    label: "CL MetaLink Sealant Tube (Brandywine)",
-    unit: "each",
-    category: "Misc Other",
-    categoryIndex: 3
+    id: "cat_insulation",
+    label: "Insulation",
+    items: [
+      { id: "mat_insulation_batt", label: "Batt Insulation", unit: UNIT_TYPES.EACH },
+      { id: "mat_insulation_foam", label: "Foam Board Insulation", unit: UNIT_TYPES.EACH },
+      { id: "mat_insulation_blown", label: "Blown-in Insulation", unit: UNIT_TYPES.EACH }
+    ]
   }
 ];
 
-// Helper function to get materials grouped by category
-function getMaterialsByCategory() {
-  const categories = {};
-  
-  // Group materials by category
-  materials.forEach(material => {
-    if (!categories[material.category]) {
-      categories[material.category] = [];
-    }
-    categories[material.category].push(material);
-  });
-  
-  // Sort materials within each category by categoryIndex
-  Object.keys(categories).forEach(category => {
-    categories[category].sort((a, b) => a.categoryIndex - b.categoryIndex);
-  });
-  
-  return categories;
-}
-
-// Get array of unique category names
-function getCategories() {
-  return [...new Set(materials.map(m => m.category))];
-}
-
-// Get material by ID
-function getMaterial(id) {
-  return materials.find(m => m.id === id);
-}
-
 module.exports = {
-  materials,
-  getMaterialsByCategory,
-  getCategories,
-  getMaterial
+  materialCategories,
+  UNIT_TYPES,
+  getHumanLabel
 };
