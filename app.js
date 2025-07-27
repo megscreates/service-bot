@@ -28,7 +28,7 @@ function getMaterialById(id) {
   return allMaterials.find(mat => mat.id === id);
 }
 
-// -------- STEP 1: Material Selection Modal with "Next" Button (not submit) --------
+// -------- STEP 1: Material Selection Modal with Submit --------
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
 
@@ -39,6 +39,7 @@ app.command('/materials', async ({ ack, body, client }) => {
         type: "modal",
         callback_id: "materials_select_modal",
         title: { type: "plain_text", text: "Materials Used" },
+        submit: { type: "plain_text", text: "Next" }, // submit is required if you have input blocks!
         close: { type: "plain_text", text: "Cancel" },
         blocks: [
           {
@@ -51,17 +52,6 @@ app.command('/materials', async ({ ack, body, client }) => {
               placeholder: { type: "plain_text", text: "Choose materials" },
               options: materialOptions()
             }
-          },
-          {
-            type: "actions",
-            block_id: "actions1",
-            elements: [
-              {
-                type: "button",
-                text: { type: "plain_text", text: "Next" },
-                action_id: "material_next"
-              }
-            ]
           }
         ]
       }
@@ -71,22 +61,16 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// -------- STEP 2: Quantity Entry Modal (on "Next" button) --------
-app.action('material_next', async ({ ack, body, client }) => {
+// -------- STEP 2: Quantity Entry Modal (swap modal on submit) --------
+app.view('materials_select_modal', async ({ ack, body, view, client }) => {
   await ack();
 
-  // Grab selected material IDs from the current view state:
-  const values = body.view.state.values;
-  const selected = values.materials_select.selected_materials.selected_options || [];
+  // Get selected material IDs
+  const selected = view.state.values.materials_select.selected_materials.selected_options || [];
   const selectedIds = selected.map(opt => opt.value);
 
   if (selectedIds.length === 0) {
-    // Optionally, send an error or warning
-    await client.chat.postEphemeral({
-      channel: body.user.id,
-      user: body.user.id,
-      text: "Please select at least one material before continuing."
-    });
+    // Optionally: show an error, but for now just return (Slack doesn't support error on multi_static_select input)
     return;
   }
 
@@ -108,10 +92,9 @@ app.action('material_next', async ({ ack, body, client }) => {
     };
   });
 
-  // Update the modal to show quantity entry
   await client.views.update({
-    view_id: body.view.id,
-    hash: body.view.hash,
+    view_id: view.id,
+    hash: view.hash,
     view: {
       type: "modal",
       callback_id: "quantity_entry_modal",
@@ -130,7 +113,7 @@ app.action('material_next', async ({ ack, body, client }) => {
   });
 });
 
-// -------- STEP 3: Review Modal --------
+// -------- STEP 3: Review Modal (swap modal on submit) --------
 app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
   // Validate and parse quantities
   const metadata = JSON.parse(view.private_metadata);
@@ -198,7 +181,6 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
     }))
   ];
 
-  // Update modal to review screen
   await client.views.update({
     view_id: view.id,
     hash: view.hash,
