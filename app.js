@@ -41,7 +41,7 @@ function formatMaterialsList(materials) {
   return materialText;
 }
 
-// -------- STEP 1: Material Selection Modal with Submit --------
+// -------- STEP 1: Job Channel Selection --------
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
 
@@ -50,20 +50,34 @@ app.command('/materials', async ({ ack, body, client }) => {
       trigger_id: body.trigger_id,
       view: {
         type: "modal",
-        callback_id: "materials_select_modal",
+        callback_id: "job_channel_select",
         title: { type: "plain_text", text: "Materials Used" },
         submit: { type: "plain_text", text: "Next" },
         close: { type: "plain_text", text: "Cancel" },
         blocks: [
           {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "First, select the job channel where these materials were used:"
+            }
+          },
+          {
             type: "input",
-            block_id: "materials_select",
-            label: { type: "plain_text", text: "Select materials used" },
+            block_id: "job_channel",
             element: {
-              type: "multi_static_select",
-              action_id: "selected_materials",
-              placeholder: { type: "plain_text", text: "Choose materials" },
-              options: materialOptions()
+              type: "channels_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select a job channel",
+                emoji: true
+              },
+              action_id: "job_channel_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Job Channel",
+              emoji: true
             }
           }
         ]
@@ -74,8 +88,51 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// -------- STEP 2: Quantity Entry Modal (using response_action) --------
+// -------- STEP 2: Materials Selection Modal --------
+app.view('job_channel_select', async ({ ack, body, view }) => {
+  // Get the selected job channel
+  const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
+
+  // Open materials selection modal
+  await ack({
+    response_action: "update",
+    view: {
+      type: "modal",
+      callback_id: "materials_select_modal",
+      private_metadata: JSON.stringify({ jobChannelId }),
+      title: { type: "plain_text", text: "Materials Used" },
+      submit: { type: "plain_text", text: "Next" },
+      close: { type: "plain_text", text: "Cancel" },
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `Selected job: <#${jobChannelId}>`
+          }
+        },
+        {
+          type: "input",
+          block_id: "materials_select",
+          label: { type: "plain_text", text: "Select materials used" },
+          element: {
+            type: "multi_static_select",
+            action_id: "selected_materials",
+            placeholder: { type: "plain_text", text: "Choose materials" },
+            options: materialOptions()
+          }
+        }
+      ]
+    }
+  });
+});
+
+// -------- STEP 3: Quantity Entry Modal --------
 app.view('materials_select_modal', async ({ ack, body, view }) => {
+  // Get previous metadata
+  const metadata = JSON.parse(view.private_metadata || '{}');
+  const jobChannelId = metadata.jobChannelId;
+  
   // Get selected material IDs
   const selected = view.state.values.materials_select.selected_materials.selected_options || [];
   const selectedIds = selected.map(opt => opt.value);
@@ -110,14 +167,21 @@ app.view('materials_select_modal', async ({ ack, body, view }) => {
     view: {
       type: "modal",
       callback_id: "quantity_entry_modal",
-      private_metadata: JSON.stringify({ selectedIds, user: body.user.id }),
+      private_metadata: JSON.stringify({ 
+        selectedIds, 
+        jobChannelId, 
+        user: body.user.id 
+      }),
       title: { type: "plain_text", text: "Enter Quantities" },
       submit: { type: "plain_text", text: "Review" },
       close: { type: "plain_text", text: "Back" },
       blocks: [
         {
           type: "section",
-          text: { type: "mrkdwn", text: "*Enter the quantity used for each material:*" }
+          text: { 
+            type: "mrkdwn", 
+            text: `*Job:* <#${jobChannelId}>\n\n*Enter the quantity used for each material:*` 
+          }
         },
         ...quantityBlocks
       ]
@@ -125,11 +189,12 @@ app.view('materials_select_modal', async ({ ack, body, view }) => {
   });
 });
 
-// -------- STEP 3: Review Modal (using response_action) --------
+// -------- STEP 4: Review Modal --------
 app.view('quantity_entry_modal', async ({ ack, view }) => {
   // Validate and parse quantities
   const metadata = JSON.parse(view.private_metadata);
   const selectedIds = metadata.selectedIds;
+  const jobChannelId = metadata.jobChannelId;
   const userId = metadata.user;
   const values = view.state.values;
 
@@ -176,17 +241,21 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
     view: {
       type: "modal",
       callback_id: "review_modal",
-      private_metadata: JSON.stringify({ materialsWithQty, userId, dateStr }),
+      private_metadata: JSON.stringify({ 
+        materialsWithQty, 
+        userId, 
+        dateStr, 
+        jobChannelId 
+      }),
       title: { type: "plain_text", text: "Review Submission" },
       submit: { type: "plain_text", text: "Submit" },
       close: { type: "plain_text", text: "Back" },
       blocks: [
         {
-          type: "header",
+          type: "section",
           text: {
-            type: "plain_text",
-            text: "Materials List",
-            emoji: true
+            type: "mrkdwn",
+            text: "*Materials List*"
           }
         },
         {
@@ -194,7 +263,7 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
           elements: [
             {
               type: "mrkdwn",
-              text: `${dateStr} • <@${userId}>`
+              text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>`
             }
           ]
         },
@@ -213,26 +282,36 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
   });
 });
 
-// -------- STEP 4: Success Message with Nice Formatting --------
+// -------- STEP 5: Submit and Post to Job Channel --------
 app.view('review_modal', async ({ ack, body, view, client }) => {
   await ack();
   
   // Get the data from private_metadata
   const metadata = JSON.parse(view.private_metadata);
-  const { materialsWithQty, userId, dateStr } = metadata;
+  const { materialsWithQty, userId, dateStr, jobChannelId } = metadata;
 
   // Format the materials list with the same helper function
   const formattedMaterials = formatMaterialsList(materialsWithQty);
 
-  // Post the beautifully formatted message back to the user
+  // Get job channel name for better display
+  let channelName = "";
+  try {
+    const channelInfo = await client.conversations.info({ channel: jobChannelId });
+    channelName = channelInfo.channel.name;
+  } catch (error) {
+    console.error("Couldn't get channel info:", error);
+    channelName = jobChannelId;
+  }
+
+  // Post the formatted message to the job channel
   await client.chat.postMessage({
-    channel: body.user.id,
+    channel: jobChannelId,
     blocks: [
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "*Materials List*" // Smaller header as section with markdown
+          text: "*Materials List*" 
         }
       },
       {
@@ -267,14 +346,36 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     ]
   });
 
-  // Optional: Format data for spreadsheet/CSV
-  const csvRows = materialsWithQty.map(mat => {
-    return `${mat.label},${mat.qty},${mat.unit}`;
-  }).join('\n');
+  // Also confirm to the user in a DM (optional)
+  await client.chat.postMessage({
+    channel: userId,
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `✅ Materials list submitted to <#${jobChannelId}>`
+        }
+      }
+    ]
+  });
 
-  // Later: Store data in CSV/database/etc
-  console.log(`Material submission from ${userId}:`);
-  console.log(materialsWithQty);
+  // Prepare data for Acumatica
+  const acumaticaData = {
+    jobChannel: channelName,
+    jobChannelId,
+    submittedBy: userId,
+    date: dateStr,
+    materials: materialsWithQty.map(mat => ({
+      itemId: mat.id,
+      description: mat.label,
+      quantity: parseInt(mat.qty, 10),
+      unit: mat.unit
+    }))
+  };
+
+  // Later: Send to Acumatica
+  console.log("Ready for Acumatica import:", acumaticaData);
 });
 
 // Start the app
