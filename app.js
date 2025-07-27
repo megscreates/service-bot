@@ -28,6 +28,19 @@ function getMaterialById(id) {
   return allMaterials.find(mat => mat.id === id);
 }
 
+// Helper: Format materials with filled circles and proper spacing
+function formatMaterialsList(materials) {
+  const numberEmojis = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
+  let materialText = '';
+  
+  materials.forEach((mat, index) => {
+    const numberEmoji = numberEmojis[index % numberEmojis.length];
+    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getHumanLabel(mat.unit)}\n\n`;
+  });
+  
+  return materialText;
+}
+
 // -------- STEP 1: Material Selection Modal with Submit --------
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
@@ -150,30 +163,12 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
     return;
   }
 
-  // Build review blocks (summary)
+  // Build review blocks with filled circle format
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
-
-  const reviewBlocks = [
-    {
-      type: "section",
-      text: { type: "mrkdwn", text: "*Please review your submission:*" }
-    },
-    {
-      type: "context",
-      elements: [
-        { type: "mrkdwn", text: `*User:* <@${userId}>` },
-        { type: "mrkdwn", text: `*Date:* ${dateStr}` }
-      ]
-    },
-    ...materialsWithQty.map(mat => ({
-      type: "section",
-      fields: [
-        { type: "mrkdwn", text: `*Material:*\n${mat.label}` },
-        { type: "mrkdwn", text: `*Quantity:*\n${mat.qty}` }
-      ]
-    }))
-  ];
+  
+  // Format the materials with filled circles and proper spacing
+  const formattedMaterials = formatMaterialsList(materialsWithQty);
 
   // Use response_action to update the view immediately
   await ack({
@@ -185,7 +180,35 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
       title: { type: "plain_text", text: "Review Submission" },
       submit: { type: "plain_text", text: "Submit" },
       close: { type: "plain_text", text: "Back" },
-      blocks: reviewBlocks
+      blocks: [
+        {
+          type: "header",
+          text: {
+            type: "plain_text",
+            text: "Materials List",
+            emoji: true
+          }
+        },
+        {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: `${dateStr} • <@${userId}>`
+            }
+          ]
+        },
+        {
+          type: "divider"
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: formattedMaterials
+          }
+        }
+      ]
     }
   });
 });
@@ -198,15 +221,8 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
   const metadata = JSON.parse(view.private_metadata);
   const { materialsWithQty, userId, dateStr } = metadata;
 
-  // Create the nicely formatted materials list with filled circle numbers
-  const numberEmojis = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
-  
-  // Build the materials text with spacing and numbered circles
-  let materialsText = '';
-  materialsWithQty.forEach((mat, index) => {
-    const numberEmoji = numberEmojis[index % numberEmojis.length];
-    materialsText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getHumanLabel(mat.unit)}\n\n`;
-  });
+  // Format the materials list with the same helper function
+  const formattedMaterials = formatMaterialsList(materialsWithQty);
 
   // Post the beautifully formatted message back to the user
   await client.chat.postMessage({
@@ -236,7 +252,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: materialsText
+          text: formattedMaterials
         }
       }
     ]
