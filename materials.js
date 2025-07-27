@@ -1,380 +1,1765 @@
-const unitToHumanLabel = {
-  "each": "units",
-  "per sheet": "sheets",
-  "per gal": "gallons",
-  "per linear ft": "linear ft",
-  "per square": "squares",
-  "per quart": "quarts",
-  "per square ft": "sq ft",
-  "per carton": "cartons",
-  "per pail": "pails",
-  "per roll": "rolls",
-  "per box": "boxes",
-  "per can": "cans",
-  "per pair": "pairs"
-};
-
-function getHumanLabel(unit) {
-  return unitToHumanLabel[unit] || unit;
-}
-
-const materialCategories = [
+// Complete categorized materials list from CSV
+const materials = [
   {
-    name: "Misc Basics",
-    items: [
-      { id: "INV0017225", label: "Rags", unit: "each", unitCost: 1 },
-      { id: "INV0017337", label: "Garbage Bags", unit: "each", unitCost: 1 },
-      { id: "INV0017226", label: "Pair of Gloves", unit: "each", unitCost: 1 },
-      { id: "INV0017228", label: "Chip Brush", unit: "each", unitCost: 1 },
-      { id: "INV0017414", label: "Masking Tape", unit: "each", unitCost: 1 },
-      { id: "INV0000612", label: "409 Cleaner", unit: "per gal", unitCost: 1 },
-      { id: "INV0017227", label: "MEK Cleaner", unit: "per quart", unitCost: 1 },
-      { id: "INV0000685", label: "MH Weathered Mem Cleaner", unit: "per quart", unitCost: 1 },
-      { id: "INV0016999", label: "CAR Weathered Mem Cleaner", unit: "per gal", unitCost: 1 },
-      { id: "INV0011449", label: "Roller Cover", unit: "each", unitCost: 1 },
-      { id: "INV0011450", label: "Roller Frame", unit: "each", unitCost: 1 },
-      { id: "INV0017372", label: "Spray Foam Can", unit: "each", unitCost: 1 },
-      { id: "INV0017123", label: "Mesh [4\" x 50ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017121", label: "Mesh [6\" x 50ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017124", label: "Mesh [6\" x 100ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017122", label: "Mesh [12\" x 100ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000777", label: "Clamp [1\"- 3\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000778", label: "Clamp [3\"- 6\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000779", label: "Clamp [6\"- 12\"]", unit: "each", unitCost: 1 },
-      { id: "INV0017373", label: "Reciprocating Saw (Metal)", unit: "each", unitCost: 1 },
-      { id: "INV0017374", label: "Reciprocating Saw (Wood)", unit: "each", unitCost: 1 },
-      { id: "INV0000461", label: "Termination Bar", unit: "each", unitCost: 1 },
-      { id: "INV0017139", label: "Coil Nail", unit: "each", unitCost: 1 },
-      { id: "INV0000781", label: "Metal to Metal Screw", unit: "each", unitCost: 1 },
-      { id: "INV0000782", label: "Metal to Wood Screw", unit: "each", unitCost: 1 },
-      { id: "INV0017002", label: "Seam Plate", unit: "each", unitCost: 1 },
-      { id: "INV0017493", label: "SecurFast Insulation Plate", unit: "each", unitCost: 1 },
-      { id: "INV0000688", label: "Visqueen Plastic Sheeting", unit: "per linear ft", unitCost: 1 }
-    ]
+    id: "INV0000602",
+    label: "NP1 Sealant Tube (Black)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 1
   },
   {
-    name: "Adhesives & Sealants",
-    items: [
-      { id: "INV0000602", label: "NP1 Sealant Tube (Black)", unit: "each", unitCost: 1 },
-      { id: "INV0000599", label: "NP1 Sealant Tube (White)", unit: "each", unitCost: 1 },
-      { id: "INV0000081", label: "JM Edge Sealant", unit: "each", unitCost: 1 },
-      { id: "INV0016998", label: "Lap Sealant Tube", unit: "each", unitCost: 1 },
-      { id: "INV0000614", label: "MH Lap Caulk Tube", unit: "each", unitCost: 1 },
-      { id: "INV0000079", label: "JM Lap Caulk Tube", unit: "each", unitCost: 1 },
-      { id: "INV0000301", label: "JM Water Cutoff Mastic Tube", unit: "each", unitCost: 1 },
-      { id: "INV0000639", label: "TRMC Water Cutoff Mastic Sausage", unit: "each", unitCost: 1 },
-      { id: "INV0000646", label: "Pourable Sealant Pouch (White)", unit: "each", unitCost: 1 },
-      { id: "INV0000645", label: "Pourable Sealant Pouch (Black)", unit: "each", unitCost: 1 },
-      { id: "INV0000656", label: "Pourable Sealant Pouch (Grey)", unit: "each", unitCost: 1 },
-      { id: "INV0017198", label: "MH Repair Hero (Black)", unit: "per gal", unitCost: 1 },
-      { id: "INV0017451", label: "MH Repair Hero (White)", unit: "per gal", unitCost: 1 },
-      { id: "INV0000638", label: "TRMC Dymonic 100 Sausage (White)", unit: "each", unitCost: 1 },
-      { id: "INV0000618", label: "TRMC Dymonic 100 Sausage (Precast White)", unit: "each", unitCost: 1 },
-      { id: "INV0000637", label: "TRMC Dymonic 100 Sausage (Black)", unit: "each", unitCost: 1 },
-      { id: "INV0000640", label: "Karna-Flex Sealant", unit: "per gal", unitCost: 1 },
-      { id: "INV0000686", label: "GacoPatch", unit: "per gal", unitCost: 1 },
-      { id: "INV0017133", label: "Uniflex Sealant", unit: "per gal", unitCost: 1 },
-      { id: "INV0000120", label: "Bonding Cement (LVOC)", unit: "per gal", unitCost: 1 },
-      { id: "INV0000119", label: "Bonding Cement (Water Based)", unit: "per gal", unitCost: 1 },
-      { id: "INV0017096", label: "Uniflex Seam Tape [2\"]", unit: "each", unitCost: 1 },
-      { id: "INV0017098", label: "Uniflex Seam Tape [4\"]", unit: "each", unitCost: 1 },
-      { id: "INV0017099", label: "Uniflex Seam Tape [6\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000655", label: "Butyl Seam Tape", unit: "each", unitCost: 1 },
-      { id: "INV0000652", label: "KARNAK 19 (Summer)", unit: "per gal", unitCost: 1 },
-      { id: "INV0000653", label: "KARNAK 19 (Winter)", unit: "per gal", unitCost: 1 },
-      { id: "INV0017151", label: "KARNAK 19 ULTRA (Summer)", unit: "per gal", unitCost: 1 },
-      { id: "INV0000654", label: "KARNAK 19 ULTRA (Winter)", unit: "per gal", unitCost: 1 },
-      { id: "INV0000596", label: "RML Lucas 6500 Flashing Cement (Black)", unit: "per gal", unitCost: 1 },
-      { id: "INV0000595", label: "RML Lucas 6500 Flashing Cement (White)", unit: "per gal", unitCost: 1 },
-      { id: "INV0017152", label: "KARNAK 19 ULTRA Tube", unit: "each", unitCost: 1 },
-      { id: "INV0017003", label: "CAR Pourable Sealant [1gal]", unit: "per quart", unitCost: 1 },
-      { id: "INV0017022", label: "CAR TPO Pourable Sealant [1gal]", unit: "per quart", unitCost: 1 }
-    ]
+    id: "INV0000599",
+    label: "NP1 Sealant Tube (White)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 2
   },
   {
-    name: "Primers, Coatings, & Solvents",
-    items: [
-      { id: "INV0000074", label: "TPO Adhesive Solvent", unit: "per gal", unitCost: 1 },
-      { id: "INV0017150", label: "KARNAK 169 Coating", unit: "per gal", unitCost: 1 },
-      { id: "INV0017132", label: "Uniflex Coating", unit: "per gal", unitCost: 1 },
-      { id: "INV0000617", label: "ALSAN RS 230 FIELD", unit: "per gal", unitCost: 1 },
-      { id: "INV0017130", label: "ALSAN Flashing", unit: "per quart", unitCost: 1 },
-      { id: "INV0000082", label: "TPO Primer", unit: "per quart", unitCost: 1 },
-      { id: "INV0017004", label: "LVOC Primer", unit: "per quart", unitCost: 1 },
-      { id: "INV0000307", label: "Asphalt Primer", unit: "per gal", unitCost: 1 },
-      { id: "INV0000127", label: "EPDM Tape Primer", unit: "per quart", unitCost: 1 },
-      { id: "INV0000641", label: "Vapor Barrier SA Primer", unit: "per gal", unitCost: 1 },
-      { id: "INV0000642", label: "Vapor Barrier SA Primer (LVOC)", unit: "per gal", unitCost: 1 }
-    ]
+    id: "INV0000081",
+    label: "JM Edge Sealant Bottle",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 3
   },
   {
-    name: "TPO Membrane, Tape, & Flashing Details",
-    items: [
-      { id: "INV0000010", label: "JM TPO 60MIL [5ft] (White)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000012", label: "JM TPO 60MIL [5ft] (Grey)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000013", label: "JM TPO 60MIL [5ft] (Tan)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000015", label: "JM TPO 60MIL [10ft] (White)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000016", label: "JM TPO 60MIL [10ft] (Grey)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000018", label: "JM TPO 60MIL [10ft] (Tan)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017503", label: "CAR TPO 60MIL [10ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000035", label: "TPO 60MIL Detail (White)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000036", label: "TPO 60MIL Detail (Grey)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000037", label: "TPO 60MIL Detail (Tan)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017025", label: "TPO SecurTape [3\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017019", label: "TPO Cover Strip [9\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017018", label: "TPO Cover Strip [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000058", label: "TPO T-Joint Patch", unit: "each", unitCost: 1 },
-      { id: "INV0017014", label: "TPO P&S Flashing Uncured [9\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017013", label: "TPO P&S Flashing Uncured [12\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016955", label: "TPO Sure-Weld NR Flashing", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017017", label: "CAR TPO Walkway", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000039", label: "JM TPO Walkway", unit: "per linear ft", unitCost: 1 }
-    ]
+    id: "INV0016998",
+    label: "Lap Sealant Tube",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 4
   },
   {
-    name: "EPDM Membrane, Tape, & Flashing Details",
-    items: [
-      { id: "INV0016964", label: "EPDM NR 45MIL [10ft x 100ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016960", label: "EPDM R 45MIL [10ft x 100ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000091", label: "EPDM NR 60MIL [10ft x 50ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016966", label: "EPDM NR 60MIL [20ft x 100ft] (CAR)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016965", label: "EPDM R 60MIL [10ft x 100ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000106", label: "EPDM P&S Corner", unit: "each", unitCost: 1 },
-      { id: "INV0016973", label: "EPDM Cover Strip [12\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000742", label: "EPDM Cover Strip [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016974", label: "EPDM Cover Strip [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016975", label: "EPDM Cover Strip [9\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000111", label: "EPDM P&S Cover Strip [12\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000109", label: "EPDM P&S Cover Strip [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000110", label: "EPDM P&S Cover Strip [9\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000114", label: "EPDM P&S RTS [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000116", label: "EPDM Seam Tap [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000115", label: "EPDM Seam Tape [3\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017010", label: "EPDM SecurTape [3\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017011", label: "EPDM SecurTape [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017005", label: "EPDM Sure-Seal RUSS [6\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017006", label: "EPDM Sure-Seal RUSS [9\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017029", label: "CAR EPDM P&S Walkway", unit: "each", unitCost: 1 },
-      { id: "INV0000107", label: "EPDM P&S Pipe Boot", unit: "each", unitCost: 1 },
-      { id: "INV0017494", label: "EPDM Pipe Boot", unit: "each", unitCost: 1 },
-      { id: "INV0000726", label: "EPDM Prefab Boot", unit: "each", unitCost: 1 },
-      { id: "INV0000739", label: "EPDM Corner Curb Flashing [18\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000740", label: "EPDM Corner Curb Flashing [24\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016957", label: "EPDM Sure-Seal Curb Flashing [20\"]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000105", label: "EPDM P&S Flashing [12\" x 50ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016956", label: "EPDM P&S Flashing [12ft x 50ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000101", label: "EPDM P&S Flashing [6\" x 100ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016967", label: "EPDM P&S Flashing [6\" x 100ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000104", label: "EPDM P&S Flashing [9\" x 50ft]", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0016968", label: "EPDM P&S Flashing [9\" x 50ft]", unit: "per linear ft", unitCost: 1 }
-    ]
+    id: "INV0000614",
+    label: "MH Lap Caulk Tube",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 5
   },
   {
-    name: "PVC Membrane, Tape, & Flashing Details",
-    items: [
-      { id: "INV0000198", label: "PVC 50MIL - 3.25ft x 100ft (Grey)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000195", label: "PVC 50MIL - 5ft x 100ft (White)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0011648", label: "PVC 60MIL - 10ft x 100ft - (White)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000210", label: "PVC 60MIL - 5ft x 100ft", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000224", label: "PVC 60MIL - 6.33ft x 100ft", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0017216", label: "PVC Pipe Boot", unit: "each", unitCost: 1 },
-      { id: "INV0000271", label: "PVC Coated Metal (Grey)", unit: "per sheet", unitCost: 1 },
-      { id: "INV0000270", label: "PVC Coated Metal (White)", unit: "per sheet", unitCost: 1 },
-      { id: "INV0000272", label: "PVC Coated Metal (Sandstone)", unit: "per sheet", unitCost: 1 },
-      { id: "INV0000273", label: "PVC Walkway (Grey)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000274", label: "PVC Walkway (Sandstone)", unit: "per linear ft", unitCost: 1 },
-      { id: "INV0000275", label: "PVC Walkway (Yellow)", unit: "per linear ft", unitCost: 1 }
-    ]
+    id: "INV0000079",
+    label: "JM Lap Caulk Tube",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 6
   },
   {
-    name: "JM Fasteners",
-    items: [
-      { id: "INV0000459", label: "Galvalume-Coated Plate [2\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000460", label: "Galvalume-Coated Plate [3\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000465", label: "RhinoBond Plate (PVC)", unit: "each", unitCost: 1 },
-      { id: "INV0000464", label: "RhinoBond Plate (TPO)", unit: "each", unitCost: 1 },
-      { id: "INV0000346", label: "UF #12 [3\" Plate]", unit: "each", unitCost: 1 },
-      { id: "INV0000332", label: "UF #12 [5\" Fastener]", unit: "each", unitCost: 1 },
-      { id: "INV0000334", label: "UF #12 [7\" Fastener]", unit: "each", unitCost: 1 },
-      { id: "INV0000405", label: "AP #14 Phillips [1.25\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000406", label: "AP #14 Phillips [1.75\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000415", label: "AP #14 Phillips [10\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000416", label: "AP #14 Phillips [11\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000417", label: "AP #14 Phillips [12\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000418", label: "AP #14 Phillips [14\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000419", label: "AP #14 Phillips [16\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000420", label: "AP #14 Phillips [18\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000407", label: "AP #14 Phillips [2\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000421", label: "AP #14 Phillips [20\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000422", label: "AP #14 Phillips [22\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000423", label: "AP #14 Phillips [24\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000408", label: "AP #14 Phillips [3\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000409", label: "AP #14 Phillips [4\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000410", label: "AP #14 Phillips [5\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000411", label: "AP #14 Phillips [6\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000412", label: "AP #14 Phillips [7\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000413", label: "AP #14 Phillips [8\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000414", label: "AP #14 Phillips [9\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000369", label: "HL #15 Phillips [1.25\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000378", label: "HL #15 Phillips [10\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000379", label: "HL #15 Phillips [11\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000380", label: "HL #15 Phillips [12\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000381", label: "HL #15 Phillips [14\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000382", label: "HL #15 Phillips [16\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000383", label: "HL #15 Phillips [18\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000384", label: "HL #15 Phillips [20\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000371", label: "HL #15 Phillips [3\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000372", label: "HL #15 Phillips [4\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000373", label: "HL #15 Phillips [5\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000374", label: "HL #15 Phillips [6\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000375", label: "HL #15 Phillips [7\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000376", label: "HL #15 Phillips [8\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000377", label: "HL #15 Phillips [9\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000395", label: "HL #15 Plate [2.375\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000388", label: "XHL #21 Phillips [5\" Fastener]", unit: "each", unitCost: 1 },
-      { id: "INV0000396", label: "XHL #21 Plate [3\" Fastener]", unit: "each", unitCost: 1 }
-    ]
+    id: "INV0000301",
+    label: "JM Water Cutoff Mastic Tube",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 7
   },
   {
-    name: "HP & HP-X Fasteners",
-    items: [
-      { id: "INV0016991", label: "HP-X Fastener [2.375\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016992", label: "HP-X Fastener [4\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016993", label: "HP-X Fastener [5\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016996", label: "HP-X Fastener [8\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016979", label: "HP Fastener [1.25\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016980", label: "HP Fastener [10\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016981", label: "HP Fastener [11\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016982", label: "HP Fastener [12\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016983", label: "HP Fastener [2\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016984", label: "HP Fastener [3\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016985", label: "HP Fastener [4\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016986", label: "HP Fastener [5\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016987", label: "HP Fastener [6\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016988", label: "HP Fastener [7\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016989", label: "HP Fastener [8\"]", unit: "each", unitCost: 1 },
-      { id: "INV0016990", label: "HP Fastener [9\"]", unit: "each", unitCost: 1 }
-    ]
+    id: "INV0000639",
+    label: "TRMC Water Cutoff Mastic Sausage",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 8
   },
   {
-    name: "Boards",
-    items: [
-      { id: "INV0001251", label: "OSB - 7/16\" x 8ft", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001258", label: "OSB - 3/4\" x 8ft", unit: "per sheet", unitCost: 1 },
-      { id: "INV0017066", label: "Lumber - 2\" x 6\" x 10ft", unit: "each", unitCost: 1 },
-      { id: "INV0001253", label: "Board - 2\" x 4\" x 10ft", unit: "each", unitCost: 1 },
-      { id: "INV0001254", label: "Board - 2\" x 6\" x 10ft", unit: "each", unitCost: 1 },
-      { id: "INV0001255", label: "Board - 2\" x 8\" x 10ft", unit: "each", unitCost: 1 },
-      { id: "INV0001256", label: "Board - 2\" x 10\" x 10ft", unit: "each", unitCost: 1 },
-      { id: "INV0001257", label: "Board - 2\" x 12\" x 10ft", unit: "each", unitCost: 1 },
-      { id: "INV0000689", label: "JM Fiberboard - 1/2\"", unit: "per square", unitCost: 1 },
-      { id: "INV0000690", label: "JM Fiberboard - 1/2\" - (Coated)", unit: "per square", unitCost: 1 },
-      { id: "INV0017067", label: "Plywood - 1/2\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0017068", label: "Plywood - 3/4\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000304", label: "JM Invinsa Board - 1/4\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000714", label: "JM ProtectoR HD Cover Board - 1/4\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000715", label: "JM ProtectoR HD Cover Board - 1/4\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000691", label: "Securock Board - 1/4\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000692", label: "Securock Board - 1/4\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000696", label: "Securock Board - 1/2\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000702", label: "DensDeck Prime Board - 1/2\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000704", label: "DensDeck Prime Board - 5/8\" x 8ft", unit: "per square", unitCost: 1 }
-    ]
+    id: "INV0000646",
+    label: "CL Pourable Sealant Pouch (White)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 9
   },
   {
-    name: "ISO",
-    items: [
-      { id: "INV0001070", label: "JM ISO Tapered - A  (1/8\")  1.0\"- 1.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001069", label: "JM ISO Tapered - AA (1/8\")  0.5\"- 1.0\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001071", label: "JM ISO Tapered - B  (1/8\")  1.5\"- 2.0\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001072", label: "JM ISO Tapered - C  (1/8\")  2.0\"- 2.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001079", label: "JM ISO Tapered - Q  (1/2\")  0.5\"- 1.0\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001076", label: "JM ISO Tapered - X  (1/4\")  0.5\"- 1.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001077", label: "JM ISO Tapered - Y  (1/4\")  1.5\"- 2.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001234", label: "JM ISO Tapered CGF - A  (1/8\")  1.0\"- 1.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001233", label: "JM ISO Tapered CGF - AA (1/8\")  0.5\"- 1.0\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001235", label: "JM ISO Tapered CGF - B  (1/8\")  1.5\"- 2.0\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001236", label: "JM ISO Tapered CGF - C  (1/8\")  2.0\"- 2.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001243", label: "JM ISO Tapered CGF - Q  (1/2\")  0.5\"- 1.0\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001240", label: "JM ISO Tapered CGF - X  (1/4\")  0.5\"- 1.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001241", label: "JM ISO Tapered CGF - Y  (1/4\")  1.5\"- 2.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001162", label: "SARNAFIL ISO Tapered - Q  (1/2\")  0.5\"- 1.0\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0001159", label: "SARNAFIL ISO Tapered - X  (1/4\")  0.5\"- 1.5\"", unit: "per sheet", unitCost: 1 },
-      { id: "INV0017061", label: "JM All-Purpose - 1.5\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000130", label: "JM ISO ENRGY - 3.5\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000131", label: "JM ISO ENRGY 3 - 1.0\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000140", label: "JM ISO ENRGY 3 - 1.5\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000150", label: "JM ISO ENRGY 3 - 2.0\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000158", label: "JM ISO ENRGY 3 - 2.5\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000168", label: "JM ISO ENRGY 3 - 3.0\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000132", label: "JM ISO ENRGY 3 - 1.0\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000141", label: "JM ISO ENRGY 3 - 1.5\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000151", label: "JM ISO ENRGY 3 - 2.0\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000159", label: "JM ISO ENRGY 3 - 2.5\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000161", label: "JM ISO ENRGY 3 - 2.6\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0000169", label: "JM ISO ENRGY 3 - 3.0\" x 8ft", unit: "per square", unitCost: 1 },
-      { id: "INV0001189", label: "JM ISO ENRGY 3 CGF - 2.0\" x 4ft", unit: "per square", unitCost: 1 },
-      { id: "INV0001108", label: "Sarnatherm ISO - 2.0\" x 4ft", unit: "per square", unitCost: 1 }
-    ]
+    id: "INV0000645",
+    label: "CL Pourable Sealant Pouch (Black)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 10
   },
   {
-    name: "Misc Overflow",
-    items: [
-      { id: "INV0000666", label: "CL MetaLink Sealant Tube (Almond)", unit: "each", unitCost: 1 },
-      { id: "INV0000683", label: "CL MetaLink Sealant Tube (Brandywine)", unit: "each", unitCost: 1 },
-      { id: "INV0000678", label: "CL MetaLink Sealant Tube (Charcoal Grey)", unit: "each", unitCost: 1 },
-      { id: "INV0000674", label: "CL MetaLink Sealant Tube Colonial Red)", unit: "each", unitCost: 1 },
-      { id: "INV0000670", label: "CL MetaLink Sealant Tube (Copper Penny)", unit: "each", unitCost: 1 },
-      { id: "INV0000672", label: "CL MetaLink Sealant Tube (Dark Bronze)", unit: "each", unitCost: 1 },
-      { id: "INV0000682", label: "CL MetaLink Sealant Tube (Forest Green)", unit: "each", unitCost: 1 },
-      { id: "INV0000660", label: "CL MetaLink Sealant Tube (Hartfoord)", unit: "each", unitCost: 1 },
-      { id: "INV0000679", label: "CL MetaLink Sealant Tube (Mansard Brown)", unit: "each", unitCost: 1 },
-      { id: "INV0000668", label: "CL MetaLink Sealant Tube (Medium Bronze)", unit: "each", unitCost: 1 },
-      { id: "INV0000665", label: "CL MetaLink Sealant Tube (Regal Blue)", unit: "each", unitCost: 1 },
-      { id: "INV0000662", label: "CL MetaLink Sealant Tube (Regal Red)", unit: "each", unitCost: 1 },
-      { id: "INV0000669", label: "CL MetaLink Sealant Tube (Sierra Tan)", unit: "each", unitCost: 1 },
-      { id: "INV0000676", label: "CL MetaLink Sealant Tube (Slate Grey)", unit: "each", unitCost: 1 },
-      { id: "INV0000681", label: "CL MetaLink Sealant Tube (Terracotta)", unit: "each", unitCost: 1 },
-      { id: "INV0000601", label: "NP1 Sealant Tube (Limestone)", unit: "each", unitCost: 1 },
-      { id: "INV0000603", label: "NP1 Sealant Tube (Medium Bronze)", unit: "each", unitCost: 1 },
-      { id: "INV0000607", label: "NP1 Sealant Tube (Special Bronze)", unit: "each", unitCost: 1 },
-      { id: "INV0000600", label: "NP1 Sealant Tube (Stone Grey)", unit: "each", unitCost: 1 },
-      { id: "INV0000604", label: "NP1 Sealant Tube (Aluminum Grey)", unit: "each", unitCost: 1 },
-      { id: "INV0000606", label: "NP1 Sealant Tube (Off White)", unit: "each", unitCost: 1 },
-      { id: "INV0000608", label: "NP1 Sealant Tube (Redwood Tan)", unit: "each", unitCost: 1 },
-      { id: "INV0000605", label: "NP1 Sealant Tube (Tan)", unit: "each", unitCost: 1 },
-      { id: "INV0000609", label: "NP1 Sealant Tube (Grey)", unit: "each", unitCost: 1 },
-      { id: "INV0000800", label: "Sarnadisc", unit: "each", unitCost: 1 },
-      { id: "INV0000793", label: "Sarnaplate", unit: "each", unitCost: 1 },
-      { id: "INV0000819", label: "Sikaplan #14 [1.25\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000829", label: "Sikaplan #14 [10\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000830", label: "Sikaplan #14 [11\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000823", label: "Sikaplan #14 [4\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000824", label: "Sikaplan #14 [5\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000838", label: "Sikaplan #15 [6\"]", unit: "each", unitCost: 1 },
-      { id: "INV0000622", label: "TRMC Dymonic 100 Sausage (Almond)", unit: "each", unitCost: 1 },
-      { id: "INV0000629", label: "TRMC Dymonic 100 Sausage (Aluminum Stone)", unit: "each", unitCost: 1 },
-      { id: "INV0000619", label: "TRMC Dymonic 100 Sausage (Anodized Aluminum)", unit: "each", unitCost: 1 },
-      { id: "INV0000631", label: "TRMC Dymonic 100 Sausage (Beige)", unit: "each", unitCost: 1 },
-      { id: "INV0000635", label: "TRMC Dymonic 100 Sausage (Bronze)", unit: "each", unitCost: 1 },
-      { id: "INV0000628", label: "TRMC Dymonic 100 Sausage (Buff)", unit: "each", unitCost: 1 },
-      { id: "INV0000636", label: "TRMC Dymonic 100 Sausage (Dark Bronze)", unit: "each", unitCost: 1 },
-      { id: "INV0000624", label: "TRMC Dymonic 100 Sausage (Grey Stone)", unit: "each", unitCost: 1 },
-      { id: "INV0000634", label: "TRMC Dymonic 100 Sausage (Hartford Green)", unit: "each", unitCost: 1 },
-      { id: "INV0000620", label: "TRMC Dymonic 100 Sausage (Ivory)", unit: "each", unitCost: 1 },
-      { id: "INV0000632", label: "TRMC Dymonic 100 Sausage (Light Bronze)", unit: "each", unitCost: 1 },
-      { id: "INV0000625", label: "TRMC Dymonic 100 Sausage (Limestone)", unit: "each", unitCost: 1 },
-      { id: "INV0000627", label: "TRMC Dymonic 100 Sausage (Natural Clay)", unit: "each", unitCost: 1 },
-      { id: "INV0000633", label: "TRMC Dymonic 100 Sausage (Redwood Tan)", unit: "each", unitCost: 1 },
-      { id: "INV0000630", label: "TRMC Dymonic 100 Sausage (Sandalwood)", unit: "each", unitCost: 1 },
-      { id: "INV0000626", label: "TRMC Dymonic 100 Sausage (Grey)", unit: "each", unitCost: 1 },
-      { id: "INV0000621", label: "TRMC Dymonic 100 Sausage (Off White)", unit: "each", unitCost: 1 },
-      { id: "INV0017030", label: "CAR Water Cutoff Mastic Tube", unit: "each", unitCost: 1 }
-    ]
-  }
-];
-
-module.exports = {
-  materialCategories,
-  getHumanLabel
-};
+    id: "INV0000656",
+    label: "JM Pourable Sealant Pouch (Grey)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 11
+  },
+  {
+    id: "INV0017003",
+    label: "CAR Pourable Sealant [1gal]",
+    unit: "per quart",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 12
+  },
+  {
+    id: "INV0017022",
+    label: "CAR TPO Pourable Sealant [1gal]",
+    unit: "per quart",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 13
+  },
+  {
+    id: "INV0000638",
+    label: "TRMC Dymonic 100 Sausage (White)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 14
+  },
+  {
+    id: "INV0000618",
+    label: "TRMC Dymonic 100 Sausage (Precast White)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 15
+  },
+  {
+    id: "INV0000637",
+    label: "TRMC Dymonic 100 Sausage (Black)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 16
+  },
+  {
+    id: "INV0017198",
+    label: "MH Repair Hero (Black)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 17
+  },
+  {
+    id: "INV0017451",
+    label: "MH Repair Hero (White)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 18
+  },
+  {
+    id: "INV0000640",
+    label: "Karna-Flex Sealant",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 19
+  },
+  {
+    id: "INV0000686",
+    label: "GacoPatch",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 20
+  },
+  {
+    id: "INV0017133",
+    label: "Uniflex Sealant",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 21
+  },
+  {
+    id: "INV0000074",
+    label: "TPO Adhesive Solvent",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 22
+  },
+  {
+    id: "INV0017150",
+    label: "KARNAK 169 Coating",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 23
+  },
+  {
+    id: "INV0017132",
+    label: "Uniflex Coating",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 24
+  },
+  {
+    id: "INV0017130",
+    label: "ALSAN Flashing",
+    unit: "per quart",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 25
+  },
+  {
+    id: "INV0000617",
+    label: "ALSAN RS 230 FIELD",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 26
+  },
+  {
+    id: "INV0000082",
+    label: "TPO Primer",
+    unit: "per quart",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 27
+  },
+  {
+    id: "INV0017004",
+    label: "LVOC Primer",
+    unit: "per quart",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 28
+  },
+  {
+    id: "INV0000307",
+    label: "Asphalt Primer",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 29
+  },
+  {
+    id: "INV0000127",
+    label: "EPDM Tape Primer",
+    unit: "per quart",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 30
+  },
+  {
+    id: "INV0000641",
+    label: "Vapor Barrier SA Primer",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 31
+  },
+  {
+    id: "INV0000642",
+    label: "Vapor Barrier SA Primer (LVOC)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 32
+  },
+  {
+    id: "INV0017096",
+    label: "Uniflex Seam Tape [2\"]",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 33
+  },
+  {
+    id: "INV0017098",
+    label: "Uniflex Seam Tape [4\"]",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 34
+  },
+  {
+    id: "INV0017099",
+    label: "Uniflex Seam Tape [6\"]",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 35
+  },
+  {
+    id: "INV0000655",
+    label: "Butyl Seam Tape",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 36
+  },
+  {
+    id: "INV0000120",
+    label: "EPDM Bonding Cement (LVOC)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 37
+  },
+  {
+    id: "INV0000119",
+    label: "EPDM Bonding Cement (Water Based)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 38
+  },
+  {
+    id: "INV0000652",
+    label: "KARNAK 19 (Summer)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 39
+  },
+  {
+    id: "INV0000653",
+    label: "KARNAK 19 (Winter)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 40
+  },
+  {
+    id: "INV0017151",
+    label: "KARNAK 19 ULTRA (Summer)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 41
+  },
+  {
+    id: "INV0000654",
+    label: "KARNAK 19 ULTRA (Winter)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 42
+  },
+  {
+    id: "INV0017152",
+    label: "KARNAK 19 ULTRA Tube",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 43
+  },
+  {
+    id: "INV0000596",
+    label: "RML Lucas 6500 Flashing Cement (Black)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 44
+  },
+  {
+    id: "INV0000595",
+    label: "RML Lucas 6500 Flashing Cement (White)",
+    unit: "per gal",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 45
+  },
+  {
+    id: "INV0001251",
+    label: "OSB - 7/16\" x 8ft",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 1
+  },
+  {
+    id: "INV0001258",
+    label: "OSB - 3/4\" x 8ft",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 2
+  },
+  {
+    id: "INV0017066",
+    label: "Lumber - 2\" x 6\" x 10ft",
+    unit: "each",
+    category: "Boards & ISO",
+    categoryIndex: 6
+  },
+  {
+    id: "INV0001253",
+    label: "Board - 2\" x 4\" x 10ft",
+    unit: "each",
+    category: "Boards & ISO",
+    categoryIndex: 3
+  },
+  {
+    id: "INV0001254",
+    label: "Board - 2\" x 6\" x 10ft",
+    unit: "each",
+    category: "Boards & ISO",
+    categoryIndex: 4
+  },
+  {
+    id: "INV0001255",
+    label: "Board - 2\" x 8\" x 10ft",
+    unit: "each",
+    category: "Boards & ISO",
+    categoryIndex: 5
+  },
+  {
+    id: "INV0001256",
+    label: "Board - 2\" x 10\" x 10ft",
+    unit: "each",
+    category: "Boards & ISO",
+    categoryIndex: 7
+  },
+  {
+    id: "INV0001257",
+    label: "Board - 2\" x 12\" x 10ft",
+    unit: "each",
+    category: "Boards & ISO",
+    categoryIndex: 8
+  },
+  {
+    id: "INV0000689",
+    label: "JM Fiberboard - 1/2\"",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 9
+  },
+  {
+    id: "INV0000690",
+    label: "JM Fiberboard - 1/2\" - (Coated)",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 10
+  },
+  {
+    id: "INV0017067",
+    label: "Plywood - 1/2\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 11
+  },
+  {
+    id: "INV0017068",
+    label: "Plywood - 3/4\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 12
+  },
+  {
+    id: "INV0000304",
+    label: "JM Invinsa Board - 1/4\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 13
+  },
+  {
+    id: "INV0000714",
+    label: "JM ProtectoR HD Cover Board - 1/4\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 14
+  },
+  {
+    id: "INV0000715",
+    label: "JM ProtectoR HD Cover Board - 1/4\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 15
+  },
+  {
+    id: "INV0000691",
+    label: "Securock Board - 1/4\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 16
+  },
+  {
+    id: "INV0000692",
+    label: "Securock Board - 1/4\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 17
+  },
+  {
+    id: "INV0000696",
+    label: "Securock Board - 1/2\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 18
+  },
+  {
+    id: "INV0000702",
+    label: "DensDeck Prime Board - 1/2\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 19
+  },
+  {
+    id: "INV0000704",
+    label: "DensDeck Prime Board - 5/8\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 20
+  },
+  {
+    id: "INV0017061",
+    label: "JM All-Purpose - 1.5\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 21
+  },
+  {
+    id: "INV0000130",
+    label: "JM ISO ENRGY - 3.5\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 22
+  },
+  {
+    id: "INV0000131",
+    label: "JM ISO ENRGY 3 - 1.0\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 23
+  },
+  {
+    id: "INV0000140",
+    label: "JM ISO ENRGY 3 - 1.5\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 24
+  },
+  {
+    id: "INV0000150",
+    label: "JM ISO ENRGY 3 - 2.0\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 25
+  },
+  {
+    id: "INV0000158",
+    label: "JM ISO ENRGY 3 - 2.5\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 26
+  },
+  {
+    id: "INV0000168",
+    label: "JM ISO ENRGY 3 - 3.0\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 27
+  },
+  {
+    id: "INV0000132",
+    label: "JM ISO ENRGY 3 - 1.0\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 28
+  },
+  {
+    id: "INV0000141",
+    label: "JM ISO ENRGY 3 - 1.5\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 29
+  },
+  {
+    id: "INV0000151",
+    label: "JM ISO ENRGY 3 - 2.0\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 30
+  },
+  {
+    id: "INV0000159",
+    label: "JM ISO ENRGY 3 - 2.5\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 31
+  },
+  {
+    id: "INV0000161",
+    label: "JM ISO ENRGY 3 - 2.6\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 32
+  },
+  {
+    id: "INV0000169",
+    label: "JM ISO ENRGY 3 - 3.0\" x 8ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 33
+  },
+  {
+    id: "INV0001189",
+    label: "JM ISO ENRGY 3 CGF - 2.0\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 34
+  },
+  {
+    id: "INV0001070",
+    label: "JM ISO Tapered - A  (1/8\")  1.0\"- 1.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 35
+  },
+  {
+    id: "INV0001069",
+    label: "JM ISO Tapered - AA (1/8\")  0.5\"- 1.0\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 36
+  },
+  {
+    id: "INV0001071",
+    label: "JM ISO Tapered - B  (1/8\")  1.5\"- 2.0\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 37
+  },
+  {
+    id: "INV0001072",
+    label: "JM ISO Tapered - C  (1/8\")  2.0\"- 2.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 38
+  },
+  {
+    id: "INV0001079",
+    label: "JM ISO Tapered - Q  (1/2\")  0.5\"- 1.0\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 39
+  },
+  {
+    id: "INV0001076",
+    label: "JM ISO Tapered - X  (1/4\")  0.5\"- 1.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 40
+  },
+  {
+    id: "INV0001077",
+    label: "JM ISO Tapered - Y  (1/4\")  1.5\"- 2.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 41
+  },
+  {
+    id: "INV0001234",
+    label: "JM ISO Tapered CGF - A  (1/8\")  1.0\"- 1.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 42
+  },
+  {
+    id: "INV0001233",
+    label: "JM ISO Tapered CGF - AA (1/8\")  0.5\"- 1.0\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 43
+  },
+  {
+    id: "INV0001235",
+    label: "JM ISO Tapered CGF - B  (1/8\")  1.5\"- 2.0\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 44
+  },
+  {
+    id: "INV0001236",
+    label: "JM ISO Tapered CGF - C  (1/8\")  2.0\"- 2.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 45
+  },
+  {
+    id: "INV0001243",
+    label: "JM ISO Tapered CGF - Q  (1/2\")  0.5\"- 1.0\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 46
+  },
+  {
+    id: "INV0001240",
+    label: "JM ISO Tapered CGF - X  (1/4\")  0.5\"- 1.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 47
+  },
+  {
+    id: "INV0001241",
+    label: "JM ISO Tapered CGF - Y  (1/4\")  1.5\"- 2.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 48
+  },
+  {
+    id: "INV0001108",
+    label: "Sarnatherm ISO - 2.0\" x 4ft",
+    unit: "per square",
+    category: "Boards & ISO",
+    categoryIndex: 49
+  },
+  {
+    id: "INV0001162",
+    label: "SARNAFIL ISO Tapered - Q  (1/2\")  0.5\"- 1.0\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 50
+  },
+  {
+    id: "INV0001159",
+    label: "SARNAFIL ISO Tapered - X  (1/4\")  0.5\"- 1.5\"",
+    unit: "per sheet",
+    category: "Boards & ISO",
+    categoryIndex: 51
+  },
+  {
+    id: "INV0016960",
+    label: "EPDM R 45MIL [10ft x 100ft]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 1
+  },
+  {
+    id: "INV0016964",
+    label: "EPDM NR 45MIL [10ft x 100ft]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 2
+  },
+  {
+    id: "INV0016965",
+    label: "EPDM R 60MIL [10ft x 100ft]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 3
+  },
+  {
+    id: "INV0000091",
+    label: "EPDM NR 60MIL [10ft x 50ft]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 4
+  },
+  {
+    id: "INV0016966",
+    label: "EPDM NR 60MIL [20ft x 100ft] (CAR)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 5
+  },
+  {
+    id: "INV0000742",
+    label: "EPDM Cover Strip [6\"] (FIR)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 6
+  },
+  {
+    id: "INV0016974",
+    label: "EPDM Cover Strip [6\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 7
+  },
+  {
+    id: "INV0016975",
+    label: "EPDM Cover Strip [9\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 8
+  },
+  {
+    id: "INV0016973",
+    label: "EPDM Cover Strip [12\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 9
+  },
+  {
+    id: "INV0000109",
+    label: "EPDM P&S Cover Strip [6\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 10
+  },
+  {
+    id: "INV0000110",
+    label: "EPDM P&S Cover Strip [9\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 11
+  },
+  {
+    id: "INV0000111",
+    label: "EPDM P&S Cover Strip [12\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 12
+  },
+  {
+    id: "INV0000114",
+    label: "EPDM P&S RTS [6\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 13
+  },
+  {
+    id: "INV0000115",
+    label: "EPDM Seam Tape [3\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 14
+  },
+  {
+    id: "INV0000116",
+    label: "EPDM Seam Tape [6\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 15
+  },
+  {
+    id: "INV0017010",
+    label: "EPDM SecurTape [3\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 16
+  },
+  {
+    id: "INV0017011",
+    label: "EPDM SecurTape [6\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 17
+  },
+  {
+    id: "INV0017005",
+    label: "EPDM Sure-Seal RUSS [6\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 18
+  },
+  {
+    id: "INV0017006",
+    label: "EPDM Sure-Seal RUSS [9\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 19
+  },
+  {
+    id: "INV0017029",
+    label: "EPDM P&S Walkway",
+    unit: "each",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 20
+  },
+  {
+    id: "INV0000107",
+    label: "EPDM P&S Pipe Boot",
+    unit: "each",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 21
+  },
+  {
+    id: "INV0017494",
+    label: "EPDM Pipe Boot",
+    unit: "each",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 22
+  },
+  {
+    id: "INV0000726",
+    label: "EPDM Prefab Boot",
+    unit: "each",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 23
+  },
+  {
+    id: "INV0000106",
+    label: "EPDM P&S Corner",
+    unit: "each",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 24
+  },
+  {
+    id: "INV0000739",
+    label: "EPDM Corner Curb Flashing [18\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 25
+  },
+  {
+    id: "INV0000740",
+    label: "EPDM Corner Curb Flashing [24\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 26
+  },
+  {
+    id: "INV0016957",
+    label: "EPDM Sure-Seal Curb Flashing [20\"]",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 27
+  },
+  {
+    id: "INV0000101",
+    label: "EPDM P&S Flashing [6\" x 100ft] (Cured)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 28
+  },
+  {
+    id: "INV0016967",
+    label: "EPDM P&S Flashing [6\" x 100ft] (Uncured)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 29
+  },
+  {
+    id: "INV0000104",
+    label: "EPDM P&S Flashing [9\" x 50ft] (Cured)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 30
+  },
+  {
+    id: "INV0016968",
+    label: "EPDM P&S Flashing [9\" x 50ft] (Uncured)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 31
+  },
+  {
+    id: "INV0000105",
+    label: "EPDM P&S Flashing [12\" x 50ft] (Cured)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 32
+  },
+  {
+    id: "INV0016956",
+    label: "EPDM P&S Flashing [12\" x 50ft] (Uncured)",
+    unit: "per linear ft",
+    category: "EPDM Membrane, Tape, & Flashing Details",
+    categoryIndex: 33
+  },
+  {
+    id: "INV0000459",
+    label: "Galvalume-Coated Plate [2\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 1
+  },
+  {
+    id: "INV0000460",
+    label: "Galvalume-Coated Plate [3\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 2
+  },
+  {
+    id: "INV0000465",
+    label: "RhinoBond Plate (PVC)",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 3
+  },
+  {
+    id: "INV0000464",
+    label: "RhinoBond Plate (TPO)",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 4
+  },
+  {
+    id: "INV0000405",
+    label: "AP #14 Phillips [1.25\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 5
+  },
+  {
+    id: "INV0000406",
+    label: "AP #14 Phillips [1.75\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 6
+  },
+  {
+    id: "INV0000415",
+    label: "AP #14 Phillips [10\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 7
+  },
+  {
+    id: "INV0000416",
+    label: "AP #14 Phillips [11\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 8
+  },
+  {
+    id: "INV0000417",
+    label: "AP #14 Phillips [12\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 9
+  },
+  {
+    id: "INV0000418",
+    label: "AP #14 Phillips [14\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 10
+  },
+  {
+    id: "INV0000419",
+    label: "AP #14 Phillips [16\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 11
+  },
+  {
+    id: "INV0000420",
+    label: "AP #14 Phillips [18\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 12
+  },
+  {
+    id: "INV0000407",
+    label: "AP #14 Phillips [2\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 13
+  },
+  {
+    id: "INV0000421",
+    label: "AP #14 Phillips [20\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 14
+  },
+  {
+    id: "INV0000422",
+    label: "AP #14 Phillips [22\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 15
+  },
+  {
+    id: "INV0000423",
+    label: "AP #14 Phillips [24\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 16
+  },
+  {
+    id: "INV0000408",
+    label: "AP #14 Phillips [3\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 17
+  },
+  {
+    id: "INV0000409",
+    label: "AP #14 Phillips [4\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 18
+  },
+  {
+    id: "INV0000410",
+    label: "AP #14 Phillips [5\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 19
+  },
+  {
+    id: "INV0000411",
+    label: "AP #14 Phillips [6\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 20
+  },
+  {
+    id: "INV0000412",
+    label: "AP #14 Phillips [7\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 21
+  },
+  {
+    id: "INV0000413",
+    label: "AP #14 Phillips [8\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 22
+  },
+  {
+    id: "INV0000414",
+    label: "AP #14 Phillips [9\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 23
+  },
+  {
+    id: "INV0000369",
+    label: "HL #15 Phillips [1.25\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 24
+  },
+  {
+    id: "INV0000378",
+    label: "HL #15 Phillips [10\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 25
+  },
+  {
+    id: "INV0000379",
+    label: "HL #15 Phillips [11\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 26
+  },
+  {
+    id: "INV0000380",
+    label: "HL #15 Phillips [12\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 27
+  },
+  {
+    id: "INV0000381",
+    label: "HL #15 Phillips [14\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 28
+  },
+  {
+    id: "INV0000382",
+    label: "HL #15 Phillips [16\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 29
+  },
+  {
+    id: "INV0000383",
+    label: "HL #15 Phillips [18\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 30
+  },
+  {
+    id: "INV0000384",
+    label: "HL #15 Phillips [20\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 31
+  },
+  {
+    id: "INV0000371",
+    label: "HL #15 Phillips [3\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 32
+  },
+  {
+    id: "INV0000372",
+    label: "HL #15 Phillips [4\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 33
+  },
+  {
+    id: "INV0000373",
+    label: "HL #15 Phillips [5\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 34
+  },
+  {
+    id: "INV0000374",
+    label: "HL #15 Phillips [6\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 35
+  },
+  {
+    id: "INV0000375",
+    label: "HL #15 Phillips [7\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 36
+  },
+  {
+    id: "INV0000376",
+    label: "HL #15 Phillips [8\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 37
+  },
+  {
+    id: "INV0000377",
+    label: "HL #15 Phillips [9\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 38
+  },
+  {
+    id: "INV0000395",
+    label: "HL #15 Plate [2.375\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 39
+  },
+  {
+    id: "INV0000388",
+    label: "XHL #21 Phillips [5\" Fastener]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 40
+  },
+  {
+    id: "INV0000396",
+    label: "XHL #21 Plate [3\" Fastener]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 41
+  },
+  {
+    id: "INV0000346",
+    label: "UF #12 [3\" Plate]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 45
+  },
+  {
+    id: "INV0000332",
+    label: "UF #12 [5\" Fastener]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 46
+  },
+  {
+    id: "INV0000334",
+    label: "UF #12 [7\" Fastener]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 47
+  },
+  {
+    id: "INV0016991",
+    label: "HP-X Fastener [2.375\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 48
+  },
+  {
+    id: "INV0016992",
+    label: "HP-X Fastener [4\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 49
+  },
+  {
+    id: "INV0016993",
+    label: "HP-X Fastener [5\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 50
+  },
+  {
+    id: "INV0016996",
+    label: "HP-X Fastener [8\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 51
+  },
+  {
+    id: "INV0016979",
+    label: "HP Fastener [1.25\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 52
+  },
+  {
+    id: "INV0016980",
+    label: "HP Fastener [10\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 53
+  },
+  {
+    id: "INV0016981",
+    label: "HP Fastener [11\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 54
+  },
+  {
+    id: "INV0016982",
+    label: "HP Fastener [12\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 55
+  },
+  {
+    id: "INV0016983",
+    label: "HP Fastener [2\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 56
+  },
+  {
+    id: "INV0016984",
+    label: "HP Fastener [3\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 57
+  },
+  {
+    id: "INV0016985",
+    label: "HP Fastener [4\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 58
+  },
+  {
+    id: "INV0016986",
+    label: "HP Fastener [5\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 59
+  },
+  {
+    id: "INV0016987",
+    label: "HP Fastener [6\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 60
+  },
+  {
+    id: "INV0016988",
+    label: "HP Fastener [7\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 61
+  },
+  {
+    id: "INV0016989",
+    label: "HP Fastener [8\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 62
+  },
+  {
+    id: "INV0016990",
+    label: "HP Fastener [9\"]",
+    unit: "each",
+    category: "Fasteners",
+    categoryIndex: 63
+  },
+  {
+    id: "INV0000612",
+    label: "409 Cleaner",
+    unit: "per gal",
+    category: "Everyday Basics",
+    categoryIndex: 6
+  },
+  {
+    id: "INV0016999",
+    label: "CAR Weathered Mem Cleaner",
+    unit: "per gal",
+    category: "Everyday Basics",
+    categoryIndex: 9
+  },
+  {
+    id: "INV0017225",
+    label: "Rags",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 1
+  },
+  {
+    id: "INV0017337",
+    label: "Garbage Bags",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 2
+  },
+  {
+    id: "INV0017226",
+    label: "Pair of Gloves",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 3
+  },
+  {
+    id: "INV0017228",
+    label: "Chip Brush",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 4
+  },
+  {
+    id: "INV0017414",
+    label: "Masking Tape",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 5
+  },
+  {
+    id: "INV0011449",
+    label: "Roller Cover",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 10
+  },
+  {
+    id: "INV0011450",
+    label: "Roller Frame",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 11
+  },
+  {
+    id: "INV0017372",
+    label: "Spray Foam Can",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 12
+  },
+  {
+    id: "INV0017123",
+    label: "Mesh [4\" x 50ft]",
+    unit: "per linear ft",
+    category: "Everyday Basics",
+    categoryIndex: 13
+  },
+  {
+    id: "INV0017121",
+    label: "Mesh [6\" x 50ft]",
+    unit: "per linear ft",
+    category: "Everyday Basics",
+    categoryIndex: 14
+  },
+  {
+    id: "INV0017124",
+    label: "Mesh [6\" x 100ft]",
+    unit: "per linear ft",
+    category: "Everyday Basics",
+    categoryIndex: 15
+  },
+  {
+    id: "INV0017122",
+    label: "Mesh [12\" x 100ft]",
+    unit: "per linear ft",
+    category: "Everyday Basics",
+    categoryIndex: 16
+  },
+  {
+    id: "INV0000777",
+    label: "Clamp [1\"- 3\"]",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 17
+  },
+  {
+    id: "INV0000778",
+    label: "Clamp [3\"- 6\"]",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 18
+  },
+  {
+    id: "INV0000779",
+    label: "Clamp [6\"- 12\"]",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 19
+  },
+  {
+    id: "INV0017373",
+    label: "Reciprocating Saw (Metal)",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 20
+  },
+  {
+    id: "INV0017374",
+    label: "Reciprocating Saw (Wood)",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 21
+  },
+  {
+    id: "INV0000461",
+    label: "Termination Bar",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 22
+  },
+  {
+    id: "INV0017139",
+    label: "Coil Nail",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 23
+  },
+  {
+    id: "INV0000781",
+    label: "Metal to Metal Screw",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 24
+  },
+  {
+    id: "INV0000782",
+    label: "Metal to Wood Screw",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 25
+  },
+  {
+    id: "INV0017002",
+    label: "Seam Plate",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 26
+  },
+  {
+    id: "INV0017493",
+    label: "SecurFast Insulation Plate",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 27
+  },
+  {
+    id: "INV0000688",
+    label: "Visqueen Plastic Sheeting",
+    unit: "per linear ft",
+    category: "Everyday Basics",
+    categoryIndex: 28
+  },
+  {
+    id: "INV0017227",
+    label: "MEK Cleaner",
+    unit: "per quart",
+    category: "Everyday Basics",
+    categoryIndex: 7
+  },
+  {
+    id: "INV0000685",
+    label: "MH Weathered Mem Cleaner",
+    unit: "per quart",
+    category: "Everyday Basics",
+    categoryIndex: 8
+  },
+  {
+    id: "INV0000666",
+    label: "CL MetaLink Sealant Tube (Almond)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 2
+  },
+  {
+    id: "INV0000683",
+    label: "CL MetaLink Sealant Tube (Brandywine)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 3
+  },
+  {
+    id: "INV0000678",
+    label: "CL MetaLink Sealant Tube (Charcoal Grey)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 4
+  },
+  {
+    id: "INV0000674",
+    label: "CL MetaLink Sealant Tube Colonial Red)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 5
+  },
+  {
+    id: "INV0000670",
+    label: "CL MetaLink Sealant Tube (Copper Penny)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 6
+  },
+  {
+    id: "INV0000672",
+    label: "CL MetaLink Sealant Tube (Dark Bronze)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 7
+  },
+  {
+    id: "INV0000682",
+    label: "CL MetaLink Sealant Tube (Forest Green)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 8
+  },
+  {
+    id: "INV0000660",
+    label: "CL MetaLink Sealant Tube (Hartfoord)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 9
+  },
+  {
+    id: "INV0000679",
+    label: "CL MetaLink Sealant Tube (Mansard Brown)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 10
+  },
+  {
+    id: "INV0000668",
+    label: "CL MetaLink Sealant Tube (Medium Bronze)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 11
+  },
+  {
+    id: "INV0000665",
+    label: "CL MetaLink Sealant Tube (Regal Blue)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 12
+  },
+  {
+    id: "INV0000662",
+    label: "CL MetaLink Sealant Tube (Regal Red)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 13
+  },
+  {
+    id: "INV0000669",
+    label: "CL MetaLink Sealant Tube (Sierra Tan)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 14
+  },
+  {
+    id: "INV0000676",
+    label: "CL MetaLink Sealant Tube (Slate Grey)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 15
+  },
+  {
+    id: "INV0000681",
+    label: "CL MetaLink Sealant Tube (Terracotta)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 16
+  },
+  {
+    id: "INV0000601",
+    label: "NP1 Sealant Tube (Limestone)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 17
+  },
+  {
+    id: "INV0000603",
+    label: "NP1 Sealant Tube (Medium Bronze)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 18
+  },
+  {
+    id: "INV0000607",
+    label: "NP1 Sealant Tube (Special Bronze)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 19
+  },
+  {
+    id: "INV0000600",
+    label: "NP1 Sealant Tube (Stone Grey)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 20
+  },
+  {
+    id: "INV0000604",
+    label: "NP1 Sealant Tube (Aluminum Grey)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 21
+  },
+  {
+    id: "INV0000606",
+    label: "NP1 Sealant Tube (Off White)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 22
+  },
+  {
+    id: "INV0000608",
+    label: "NP1 Sealant Tube (Redwood Tan)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 23
+  },
+  {
+    id: "INV0000605",
+    label: "NP1 Sealant Tube (Tan)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 24
+  },
+  {
+    id: "INV0000609",
+    label: "NP1 Sealant Tube (Grey)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 25
+  },
+  {
+    id: "INV0000800",
+    label: "Sarnadisc ",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 43
+  },
+  {
+    id: "INV0000793",
+    label: "Sarnaplate",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 44
+  },
+  {
+    id: "INV0000819",
+    label: "Sikaplan #14 [1.25\"]",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 45
+  },
+  {
+    id: "INV0000829",
+    label: "Sikaplan #14 [10\"]",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 46
+  },
+  {
+    id: "INV0000830",
+    label: "Sikaplan #14 [11\"]",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 47
+  },
+  {
+    id: "INV0000823",
+    label: "Sikaplan #14 [4\"]",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 48
+  },
+  {
+    id: "INV0000824",
+    label: "Sikaplan #14 [5\"]",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 49
+  },
+  {
+    id: "INV0000838",
+    label: "Sikaplan #15 [6\"]",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 50
+  },
+  {
+    id: "INV0000622",
+    label: "TRMC Dymonic 100 Sausage (Almond)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 26
+  },
+  {
+    id: "INV0000629",
+    label: "TRMC Dymonic 100 Sausage (Aluminum Stone)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 27
+  },
+  {
+    id: "INV0000619",
+    label: "TRMC Dymonic 100 Sausage (Anodized Aluminum)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex:
