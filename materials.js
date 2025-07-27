@@ -1,6 +1,7 @@
 // Group materials by category and format for the Slack app
 const materialCategories = [
-  name: "TPO Membrane, Tape, & Flashing Details",
+  {
+    name: "TPO Membrane, Tape, & Flashing Details",
     items: [
       { id: "INV0000010", label: "TPO 60MIL [5ft] (White)", unit: "ft" },
       { id: "INV0000012", label: "TPO 60MIL [5ft] (Grey)", unit: "ft" },
