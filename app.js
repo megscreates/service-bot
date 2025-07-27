@@ -1,277 +1,237 @@
 const { App } = require('@slack/bolt');
-const { materials, getMaterialsByCategory, getCategories } = require('./materials.js');
+const { materialCategories, getHumanLabel } = require('./materials');
 
-// Initialize the app
+// Flatten all materials into one big list for the MVP
+const allMaterials = materialCategories.flatMap(cat => cat.items).slice(0, 50); // Limit to 50 for now
+
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: true,
-  appToken: process.env.SLACK_APP_TOKEN,
-  port: process.env.PORT || 3000
+  socketMode: !!process.env.SLACK_APP_TOKEN, // Render might use http instead
+  appToken: process.env.SLACK_APP_TOKEN
 });
 
-// Listen for the /materials command
+// Helper: Build Block Kit options for the select menu
+function materialOptions() {
+  return allMaterials.map(mat => ({
+    text: {
+      type: "plain_text",
+      text: mat.label,
+      emoji: true
+    },
+    value: mat.id
+  }));
+}
+
+// Helper: Get material info by id
+function getMaterialById(id) {
+  return allMaterials.find(mat => mat.id === id);
+}
+
+// -------- STEP 1: Material Selection Modal with Submit --------
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
 
   try {
-    // Get materials by category
-    const materialsByCategory = getMaterialsByCategory();
-    const categories = getCategories();
-    
-    // Create blocks for the modal
-    let blocks = [
-      {
-        type: "header",
-        text: {
-          type: "plain_text",
-          text: "Select Materials",
-          emoji: true
-        }
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "Select the materials you used for this job:"
-        }
-      },
-      {
-        type: "divider"
-      }
-    ];
-    
-    // Add each category and its materials
-    categories.forEach(category => {
-      // Add category header
-      blocks.push({
-        type: "header",
-        text: {
-          type: "plain_text",
-          text: category,
-          emoji: true
-        }
-      });
-      
-      // Add materials as checkboxes
-      materialsByCategory[category].forEach(material => {
-        blocks.push({
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*${material.label}* (${material.unit})`
-          },
-          accessory: {
-            type: "checkboxes",
-            action_id: `material_${material.id}`,
-            options: [
-              {
-                text: {
-                  type: "plain_text",
-                  text: "Select",
-                  emoji: true
-                },
-                value: material.id
-              }
-            ]
-          }
-        });
-      });
-      
-      blocks.push({
-        type: "divider"
-      });
-    });
-    
-    // Open the modal
     await client.views.open({
       trigger_id: body.trigger_id,
       view: {
         type: "modal",
-        callback_id: "materials_selection",
-        title: {
-          type: "plain_text",
-          text: "Material Selection",
-          emoji: true
-        },
-        submit: {
-          type: "plain_text",
-          text: "Next",
-          emoji: true
-        },
-        close: {
-          type: "plain_text",
-          text: "Cancel",
-          emoji: true
-        },
-        blocks: blocks
+        callback_id: "materials_select_modal",
+        title: { type: "plain_text", text: "Materials Used" },
+        submit: { type: "plain_text", text: "Next" },
+        close: { type: "plain_text", text: "Cancel" },
+        blocks: [
+          {
+            type: "input",
+            block_id: "materials_select",
+            label: { type: "plain_text", text: "Select materials used" },
+            element: {
+              type: "multi_static_select",
+              action_id: "selected_materials",
+              placeholder: { type: "plain_text", text: "Choose materials" },
+              options: materialOptions()
+            }
+          }
+        ]
       }
     });
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
   }
 });
 
-// Handle the material selection submission
-app.view('materials_selection', async ({ ack, body, view, client }) => {
-  await ack();
-  
-  // Extract selected material IDs
-  const selectedMaterials = [];
-  for (const blockId in view.state.values) {
-    for (const actionId in view.state.values[blockId]) {
-      if (actionId.startsWith('material_')) {
-        const selection = view.state.values[blockId][actionId];
-        if (selection.selected_options && selection.selected_options.length > 0) {
-          selectedMaterials.push(selection.selected_options[0].value);
-        }
-      }
-    }
+// -------- STEP 2: Quantity Entry Modal (using response_action) --------
+app.view('materials_select_modal', async ({ ack, body, view }) => {
+  // Get selected material IDs
+  const selected = view.state.values.materials_select.selected_materials.selected_options || [];
+  const selectedIds = selected.map(opt => opt.value);
+
+  if (selectedIds.length === 0) {
+    // You could return errors here if you wanted to validate selection
+    await ack();
+    return;
   }
-  
-  // If no materials selected, send a message
-  if (selectedMaterials.length === 0) {
-    try {
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: "You didn't select any materials."
-      });
-      return;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  
-  // Create blocks for quantity input modal
-  const quantityBlocks = [
-    {
-      type: "header",
-      text: {
+
+  // Build quantity entry blocks (one input per material)
+  const quantityBlocks = selectedIds.map(id => {
+    const mat = getMaterialById(id);
+    return {
+      type: "input",
+      block_id: `qty_${id}`,
+      label: {
         type: "plain_text",
-        text: "Enter Quantities",
-        emoji: true
+        text: `${mat.label} (${getHumanLabel(mat.unit)})`
+      },
+      element: {
+        type: "plain_text_input",
+        action_id: "quantity_input",
+        placeholder: { type: "plain_text", text: "Quantity (whole number)" }
       }
-    },
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "Please enter the quantities for each selected material:"
-      }
-    },
-    {
-      type: "divider"
-    }
-  ];
-  
-  // Add input fields for each selected material
-  selectedMaterials.forEach(materialId => {
-    const material = materials.find(m => m.id === materialId);
-    if (material) {
-      quantityBlocks.push({
-        type: "input",
-        block_id: `quantity_${materialId}`,
-        element: {
-          type: "plain_text_input",
-          action_id: "quantity_input",
-          placeholder: {
-            type: "plain_text",
-            text: `Enter quantity (${material.unit})`,
-            emoji: true
-          }
-        },
-        label: {
-          type: "plain_text",
-          text: material.label,
-          emoji: true
-        }
-      });
-    }
+    };
   });
-  
-  // Open the quantity input modal
-  try {
-    await client.views.open({
-      trigger_id: body.trigger_id,
-      view: {
-        type: "modal",
-        callback_id: "materials_view_submission",
-        title: {
-          type: "plain_text",
-          text: "Enter Quantities",
-          emoji: true
-        },
-        submit: {
-          type: "plain_text",
-          text: "Submit",
-          emoji: true
-        },
-        close: {
-          type: "plain_text",
-          text: "Cancel",
-          emoji: true
-        },
-        blocks: quantityBlocks,
-        private_metadata: JSON.stringify({ selectedMaterials })
-      }
-    });
-  } catch (error) {
-    console.error(error);
-  }
-});
 
-// Handle the quantity input submission
-app.view('materials_view_submission', async ({ ack, body, view, client }) => {
-  await ack();
-  
-  // Get the selected materials from private_metadata
-  const { selectedMaterials } = JSON.parse(view.private_metadata);
-  
-  // Gather quantities
-  const materialsWithQuantities = [];
-  selectedMaterials.forEach(materialId => {
-    const material = materials.find(m => m.id === materialId);
-    if (material) {
-      const quantityValue = view.state.values[`quantity_${materialId}`].quantity_input.value || "0";
-      materialsWithQuantities.push({
-        id: material.id,
-        label: material.label,
-        unit: material.unit,
-        quantity: quantityValue
-      });
-    }
-  });
-  
-  // Format the response message
-  let messageText = "*Materials and Quantities:*\n\n";
-  materialsWithQuantities.forEach(material => {
-    messageText += `• ${material.label}: ${material.quantity} ${material.unit}\n`;
-  });
-  
-  // Send the response
-  try {
-    await client.chat.postMessage({
-      channel: body.user.id,
-      text: messageText,
+  // Use response_action to update the view immediately
+  await ack({
+    response_action: "update",
+    view: {
+      type: "modal",
+      callback_id: "quantity_entry_modal",
+      private_metadata: JSON.stringify({ selectedIds, user: body.user.id }),
+      title: { type: "plain_text", text: "Enter Quantities" },
+      submit: { type: "plain_text", text: "Review" },
+      close: { type: "plain_text", text: "Back" },
       blocks: [
         {
           type: "section",
-          text: {
-            type: "mrkdwn",
-            text: messageText
-          }
-        }
+          text: { type: "mrkdwn", text: "*Enter the quantity used for each material:*" }
+        },
+        ...quantityBlocks
       ]
+    }
+  });
+});
+
+// -------- STEP 3: Review Modal (using response_action) --------
+app.view('quantity_entry_modal', async ({ ack, view }) => {
+  // Validate and parse quantities
+  const metadata = JSON.parse(view.private_metadata);
+  const selectedIds = metadata.selectedIds;
+  const userId = metadata.user;
+  const values = view.state.values;
+
+  // Build material/quantity list and validate
+  let hasError = false;
+  let errorBlocks = {};
+  const materialsWithQty = selectedIds.map(id => {
+    const mat = getMaterialById(id);
+    const qtyBlock = values[`qty_${id}`];
+    const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
+    const qty = parseInt(qtyRaw, 10);
+
+    if (isNaN(qty) || qty < 1 || !/^\d+$/.test(qtyRaw)) {
+      hasError = true;
+      errorBlocks[`qty_${id}`] = "Enter a positive whole number (1+)";
+    }
+
+    return {
+      id,
+      label: mat.label,
+      unit: mat.unit,
+      qty: qtyRaw
+    };
+  });
+
+  if (hasError) {
+    await ack({
+      response_action: "errors",
+      errors: errorBlocks
     });
-    
-    console.log("Form submission complete with data:", JSON.stringify(materialsWithQuantities));
-  } catch (error) {
-    console.error(error);
+    return;
   }
+
+  // Build review blocks (summary)
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10);
+
+  const reviewBlocks = [
+    {
+      type: "section",
+      text: { type: "mrkdwn", text: "*Please review your submission:*" }
+    },
+    {
+      type: "context",
+      elements: [
+        { type: "mrkdwn", text: `*User:* <@${userId}>` },
+        { type: "mrkdwn", text: `*Date:* ${dateStr}` }
+      ]
+    },
+    ...materialsWithQty.map(mat => ({
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: `*Material:*\n${mat.label}` },
+        { type: "mrkdwn", text: `*Quantity:*\n${mat.qty}` }
+      ]
+    }))
+  ];
+
+  // Use response_action to update the view immediately
+  await ack({
+    response_action: "update",
+    view: {
+      type: "modal",
+      callback_id: "review_modal",
+      private_metadata: JSON.stringify({ materialsWithQty, userId, dateStr }),
+      title: { type: "plain_text", text: "Review Submission" },
+      submit: { type: "plain_text", text: "Submit" },
+      close: { type: "plain_text", text: "Back" },
+      blocks: reviewBlocks
+    }
+  });
+});
+
+// -------- STEP 4: Success Message --------
+app.view('review_modal', async ({ ack, body, view, client }) => {
+  await ack();
+  
+  // Get the data from private_metadata
+  const metadata = JSON.parse(view.private_metadata);
+  const { materialsWithQty, userId } = metadata;
+
+  // Optional: Format data for spreadsheet/CSV
+  const csvRows = materialsWithQty.map(mat => {
+    return `${mat.label},${mat.qty},${mat.unit}`;
+  }).join('\n');
+
+  // For now, just post back to the user's DM
+  await client.chat.postMessage({
+    channel: body.user.id,
+    blocks: [
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: "✅ *Materials submission complete!*" }
+      },
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: "Here's what you submitted:" }
+      },
+      ...materialsWithQty.map(mat => ({
+        type: "section",
+        fields: [
+          { type: "mrkdwn", text: `*Material:*\n${mat.label}` },
+          { type: "mrkdwn", text: `*Quantity:*\n${mat.qty} ${getHumanLabel(mat.unit)}` }
+        ]
+      }))
+    ]
+  });
+
+  // Later: Store data in CSV/database/etc
+  console.log(`Material submission from ${userId}:`);
+  console.log(materialsWithQty);
 });
 
 // Start the app
 (async () => {
-  await app.start();
-  console.log('⚡️ Bolt app is running!');
+  await app.start(process.env.PORT || 3000);
+  console.log('⚡️ Service Bot is running!');
 })();
