@@ -22,14 +22,14 @@ function getMaterialById(id) {
 
 // Helper: Format materials with filled circles and proper spacing
 function formatMaterialsList(materials) {
-  const numberEmojis = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
   let materialText = '';
   
-  materials.forEach((mat, index) => {
-    const numberEmoji = numberEmojis[index % numberEmojis.length];
+  materials.forEach((mat) => {
+    // Use arrow instead of numbers
+    const prefix = "»";
+    
     const qty = parseInt(mat.qty, 10);
-    // Use smart function that picks singular/plural based on quantity
-    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getQuantityLabel(mat.unit, qty)}\n\n`;
+    materialText += `${prefix}   *${mat.label}* — ${mat.qty} ${getQuantityLabel(mat.unit, qty)}\n\n`;
   });
   
   return materialText;
@@ -196,6 +196,17 @@ app.view('materials_select_modal', async ({ ack, body, view }) => {
       response_action: "errors",
       errors: {
         "category_0": "Please select at least one material"
+      }
+    });
+    return;
+  }
+  
+  // Add check for maximum items
+  if (selectedMaterials.length > 20) {
+    await ack({
+      response_action: "errors",
+      errors: {
+        "category_0": "Please select no more than 20 materials"
       }
     });
     return;
