@@ -1,5 +1,5 @@
 const { App } = require('@slack/bolt');
-const { materialCategories, getHumanLabel, getSingularLabel, getQuantityLabel } = require('./materials');
+const { materialCategories, getPluralLabel, getSingularLabel, getQuantityLabel } = require('./materials');
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
