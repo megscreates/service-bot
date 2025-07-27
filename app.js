@@ -229,11 +229,10 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     channel: body.user.id,
     blocks: [
       {
-        type: "header",
+        type: "section",
         text: {
-          type: "plain_text",
-          text: "Materials List",
-          emoji: true
+          type: "mrkdwn",
+          text: "*Materials List*" // Smaller header as section with markdown
         }
       },
       {
@@ -253,6 +252,16 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         text: {
           type: "mrkdwn",
           text: formattedMaterials
+        }
+      },
+      {
+        type: "divider" // Added divider at the end
+      },
+      {
+        type: "section", // Empty section for visual spacing
+        text: {
+          type: "mrkdwn",
+          text: " " 
         }
       }
     ]
