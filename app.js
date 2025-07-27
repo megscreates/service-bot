@@ -308,6 +308,9 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     channel: jobChannelId,
     blocks: [
       {
+        type: "divider" // Added divider above the Materials List header
+      },
+      {
         type: "section",
         text: {
           type: "mrkdwn",
@@ -319,7 +322,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         elements: [
           {
             type: "mrkdwn",
-            text: `${dateStr} • <@${userId}>`
+            text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>` // Added job channel to context
           }
         ]
       },
