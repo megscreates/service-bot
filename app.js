@@ -27,7 +27,8 @@ function formatMaterialsList(materials) {
   
   materials.forEach((mat, index) => {
     const numberEmoji = numberEmojis[index % numberEmojis.length];
-    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} per ${getHumanLabel(mat.unit)}\n\n`;
+    // Regular format for output (without "per")
+    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getHumanLabel(mat.unit)}\n\n`;
   });
   
   return materialText;
@@ -209,7 +210,7 @@ app.view('materials_select_modal', async ({ ack, body, view }) => {
       block_id: `qty_${id}`,
       label: {
         type: "plain_text",
-        text: `${mat.label} (per ${getHumanLabel(mat.unit)})`, // Changed to "per [unit]"
+        text: `${mat.label} - per ${getHumanLabel(mat.unit)}`, // "Material Name - per Unit" format
         emoji: true
       },
       element: {
