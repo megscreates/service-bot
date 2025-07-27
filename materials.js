@@ -37,8 +37,19 @@ function getSingularLabel(unit) {
   return labels[unit] || unit;
 }
 
+// New helper function that chooses singular or plural based on quantity
+function getQuantityLabel(unit, qty) {
+  // Use singular form for quantity of 1, plural for all others
+  if (qty === 1) {
+    return getSingularLabel(unit);
+  } else {
+    return getHumanLabel(unit);
+  }
+}
+
 module.exports = {
   materialCategories,
   getHumanLabel,
-  getSingularLabel
+  getSingularLabel,
+  getQuantityLabel
 };
