@@ -116,6 +116,8 @@ app.action('selected_materials', async ({ ack, body, client }) => {
 
 // Modal submission handler
 app.view('materials_modal', async ({ ack, body, view, client }) => {
+  await ack();
+  
   const values = view.state.values;
   const selected = values.materials_select.selected_materials.selected_options || [];
 
