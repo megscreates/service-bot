@@ -190,40 +190,62 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
   });
 });
 
-// -------- STEP 4: Success Message --------
+// -------- STEP 4: Success Message with Nice Formatting --------
 app.view('review_modal', async ({ ack, body, view, client }) => {
   await ack();
   
   // Get the data from private_metadata
   const metadata = JSON.parse(view.private_metadata);
-  const { materialsWithQty, userId } = metadata;
+  const { materialsWithQty, userId, dateStr } = metadata;
+
+  // Create the nicely formatted materials list with circle numbers
+  const numberEmojis = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
+  
+  // Build the materials text with spacing and numbered circles
+  let materialsText = '';
+  materialsWithQty.forEach((mat, index) => {
+    const numberEmoji = numberEmojis[index % numberEmojis.length];
+    materialsText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getHumanLabel(mat.unit)}\n\n`;
+  });
+
+  // Post the beautifully formatted message back to the user
+  await client.chat.postMessage({
+    channel: body.user.id,
+    blocks: [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: "Materials List",
+          emoji: true
+        }
+      },
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: `${dateStr} • <@${userId}>`
+          }
+        ]
+      },
+      {
+        type: "divider"
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: materialsText
+        }
+      }
+    ]
+  });
 
   // Optional: Format data for spreadsheet/CSV
   const csvRows = materialsWithQty.map(mat => {
     return `${mat.label},${mat.qty},${mat.unit}`;
   }).join('\n');
-
-  // For now, just post back to the user's DM
-  await client.chat.postMessage({
-    channel: body.user.id,
-    blocks: [
-      {
-        type: "section",
-        text: { type: "mrkdwn", text: "✅ *Materials submission complete!*" }
-      },
-      {
-        type: "section",
-        text: { type: "mrkdwn", text: "Here's what you submitted:" }
-      },
-      ...materialsWithQty.map(mat => ({
-        type: "section",
-        fields: [
-          { type: "mrkdwn", text: `*Material:*\n${mat.label}` },
-          { type: "mrkdwn", text: `*Quantity:*\n${mat.qty} ${getHumanLabel(mat.unit)}` }
-        ]
-      }))
-    ]
-  });
 
   // Later: Store data in CSV/database/etc
   console.log(`Material submission from ${userId}:`);
