@@ -92,8 +92,8 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     };
   });
 
-  // Open new modal for quantities
-  await client.views.open({
+  // PUSH new modal for quantities instead of open
+  await client.views.push({
     trigger_id: body.trigger_id,
     view: {
       type: "modal",
@@ -184,7 +184,7 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
   ];
 
   // Open review modal
-  await client.views.open({
+  await client.views.push({
     trigger_id: body.trigger_id,
     view: {
       type: "modal",
