@@ -1520,6 +1520,13 @@ const materials = [
     categoryIndex: 8
   },
   {
+    id: "INV0017030",
+    label: "CAR Water Cutoff Mastic Tube",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 1
+  },
+  {
     id: "INV0000666",
     label: "CL MetaLink Sealant Tube (Almond)",
     unit: "each",
@@ -1762,4 +1769,148 @@ const materials = [
     label: "TRMC Dymonic 100 Sausage (Anodized Aluminum)",
     unit: "each",
     category: "Misc Other",
-    categoryIndex:
+    categoryIndex: 28
+  },
+  {
+    id: "INV0000631",
+    label: "TRMC Dymonic 100 Sausage (Beige)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 29
+  },
+  {
+    id: "INV0000635",
+    label: "TRMC Dymonic 100 Sausage (Bronze)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 30
+  },
+  {
+    id: "INV0000628",
+    label: "TRMC Dymonic 100 Sausage (Buff)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 31
+  },
+  {
+    id: "INV0000636",
+    label: "TRMC Dymonic 100 Sausage (Dark Bronze)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 32
+  },
+  {
+    id: "INV0000624",
+    label: "TRMC Dymonic 100 Sausage (Grey Stone)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 33
+  },
+  {
+    id: "INV0000634",
+    label: "TRMC Dymonic 100 Sausage (Hartford Green)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 34
+  },
+  {
+    id: "INV0000620",
+    label: "TRMC Dymonic 100 Sausage (Ivory)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 35
+  },
+  {
+    id: "INV0000632",
+    label: "TRMC Dymonic 100 Sausage (Light Bronze)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 36
+  },
+  {
+    id: "INV0000625",
+    label: "TRMC Dymonic 100 Sausage (Limestone)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 37
+  },
+  {
+    id: "INV0000627",
+    label: "TRMC Dymonic 100 Sausage (Natural Clay)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 38
+  },
+  {
+    id: "INV0000633",
+    label: "TRMC Dymonic 100 Sausage (Redwood Tan)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 39
+  },
+  {
+    id: "INV0000630",
+    label: "TRMC Dymonic 100 Sausage (Sandalwood)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 40
+  },
+  {
+    id: "INV0000626",
+    label: "TRMC Dymonic 100 Sausage (Grey)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 41
+  },
+  {
+    id: "INV0000621",
+    label: "TRMC Dymonic 100 Sausage (Anodized)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 42
+  },
+  {
+    id: "INV0017030",
+    label: "TRMC Dymonic 100 Sausage (Off White)",
+    unit: "each",
+    category: "Misc Other",
+    categoryIndex: 43
+  }
+];
+
+// Helper function to get materials grouped by category
+function getMaterialsByCategory() {
+  const categories = {};
+  
+  // Group materials by category
+  materials.forEach(material => {
+    if (!categories[material.category]) {
+      categories[material.category] = [];
+    }
+    categories[material.category].push(material);
+  });
+  
+  // Sort materials within each category by categoryIndex
+  Object.keys(categories).forEach(category => {
+    categories[category].sort((a, b) => a.categoryIndex - b.categoryIndex);
+  });
+  
+  return categories;
+}
+
+// Get array of unique category names
+function getCategories() {
+  return [...new Set(materials.map(m => m.category))];
+}
+
+// Get material by ID
+function getMaterial(id) {
+  return materials.find(m => m.id === id);
+}
+
+module.exports = {
+  materials,
+  getMaterialsByCategory,
+  getCategories,
+  getMaterial
+};
