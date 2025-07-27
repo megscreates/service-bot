@@ -2,7 +2,7 @@ const { App } = require('@slack/bolt');
 const { materialCategories, getHumanLabel } = require('./materials');
 
 // Flatten all materials into one big list for the MVP
-const allMaterials = materialCategories.flatMap(cat => cat.items);
+const allMaterials = materialCategories.flatMap(cat => cat.items).slice(0, 50); // Limit to 50 for now
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
