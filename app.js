@@ -1,199 +1,182 @@
-require('dotenv').config();
-const { App } = require("@slack/bolt");
-const { materialCategories, getHumanLabel } = require("./materials.js");
+const { App } = require('@slack/bolt');
+const { materialCategories, getHumanLabel } = require('./materials');
 
-// ========== CONFIG ==========
+// Flatten all materials into one big list for the MVP
+const allMaterials = materialCategories.flatMap(cat => cat.items);
+
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: true,
+  socketMode: !!process.env.SLACK_APP_TOKEN, // Render might use http instead
   appToken: process.env.SLACK_APP_TOKEN
 });
 
-// ========== HELPERS ==========
-
-// Generate Slack options for a given category
-function getOptionsForCategory(category) {
-  return category.items.map(item => ({
-    text: { type: "plain_text", text: item.label },
-    value: item.id
+// Helper: Build Block Kit options for the select menu
+function materialOptions() {
+  return allMaterials.map(mat => ({
+    text: {
+      type: "plain_text",
+      text: mat.label,
+      emoji: true
+    },
+    value: mat.id
   }));
 }
 
-// Get item by ID
-function getItemById(id) {
-  for (let cat of materialCategories) {
-    for (let item of cat.items) {
-      if (item.id === id) return { ...item, category: cat.name };
-    }
-  }
-  return null;
+// Helper: Get material info by id
+function getMaterialById(id) {
+  return allMaterials.find(mat => mat.id === id);
 }
 
-// ========== /materials COMMAND ==========
-
-app.command("/materials", async ({ ack, body, client }) => {
+// Command handler
+app.command('/materials', async ({ ack, body, client }) => {
   await ack();
 
-  // Build modal with multi-select for each category
-  const blocks = [];
-  materialCategories.forEach(cat => {
-    blocks.push(
-      {
-        type: "section",
-        text: { type: "mrkdwn", text: `*${cat.name}*` }
-      },
-      {
-        type: "input",
-        block_id: `cat_${cat.name}`,
-        label: { type: "plain_text", text: "Select materials:" },
-        element: {
-          type: "multi_static_select",
-          action_id: "material_select",
-          placeholder: { type: "plain_text", text: "Choose..." },
-          options: getOptionsForCategory(cat)
-        },
-        optional: true
+  try {
+    await client.views.open({
+      trigger_id: body.trigger_id,
+      view: {
+        type: "modal",
+        callback_id: "materials_modal",
+        title: { type: "plain_text", text: "Materials Used" },
+        submit: { type: "plain_text", text: "Submit" },
+        close: { type: "plain_text", text: "Cancel" },
+        blocks: [
+          {
+            type: "input",
+            block_id: "materials_select",
+            label: { type: "plain_text", text: "Select materials used" },
+            element: {
+              type: "multi_static_select",
+              action_id: "selected_materials",
+              placeholder: { type: "plain_text", text: "Choose materials" },
+              options: materialOptions()
+            }
+          }
+        ]
       }
-    );
-  });
+    });
+  } catch (err) {
+    console.error(err);
+  }
+});
 
-  await client.views.open({
-    trigger_id: body.trigger_id,
+// Listen for modal updates (dynamic quantity fields)
+app.action('selected_materials', async ({ ack, body, client }) => {
+  await ack();
+
+  const selectedIds = body.actions[0].selected_options.map(opt => opt.value);
+
+  // Build blocks: select + quantity input for each material
+  const blocks = [
+    {
+      type: "input",
+      block_id: "materials_select",
+      label: { type: "plain_text", text: "Select materials used" },
+      element: {
+        type: "multi_static_select",
+        action_id: "selected_materials",
+        placeholder: { type: "plain_text", text: "Choose materials" },
+        options: materialOptions(),
+        initial_options: materialOptions().filter(opt => selectedIds.includes(opt.value))
+      }
+    },
+    ...selectedIds.map(id => {
+      const mat = getMaterialById(id);
+      return {
+        type: "input",
+        block_id: `qty_${id}`,
+        label: {
+          type: "plain_text",
+          text: `How much ${mat.label}? (${getHumanLabel(mat.unit)})`
+        },
+        element: {
+          type: "plain_text_input",
+          action_id: "quantity_input",
+          placeholder: { type: "plain_text", text: "Quantity (e.g. 2.5)" }
+        }
+      };
+    })
+  ];
+
+  // Update the modal
+  await client.views.update({
+    view_id: body.view.id,
+    hash: body.view.hash,
     view: {
       type: "modal",
-      callback_id: "materials_select",
+      callback_id: "materials_modal",
       title: { type: "plain_text", text: "Materials Used" },
-      submit: { type: "plain_text", text: "Next" },
+      submit: { type: "plain_text", text: "Submit" },
       close: { type: "plain_text", text: "Cancel" },
       blocks
     }
   });
 });
 
-// ========== MATERIALS SELECTED: QUANTITY MODAL ==========
+// Modal submission handler
+app.view('materials_modal', async ({ ack, body, view, client }) => {
+  const values = view.state.values;
+  const selected = values.materials_select.selected_materials.selected_options || [];
 
-app.view("materials_select", async ({ ack, body, view, client }) => {
-  await ack();
+  // Collect material/quantity pairs and validate
+  let hasError = false;
+  let errorBlocks = {};
 
-  // Gather selected item IDs
-  let selectedIds = [];
-  for (let key in view.state.values) {
-    const block = view.state.values[key];
-    if (block.material_select && block.material_select.selected_options) {
-      selectedIds = selectedIds.concat(
-        block.material_select.selected_options.map(opt => opt.value)
-      );
+  const usedMaterials = selected.map(opt => {
+    const id = opt.value;
+    const mat = getMaterialById(id);
+    const qtyBlock = values[`qty_${id}`];
+    const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
+    const qty = parseFloat(qtyRaw);
+
+    // Validation: min 0.5, max 999, positive, 2 decimals max
+    if (
+      isNaN(qty) ||
+      qty < 0.5 ||
+      qty > 999 ||
+      !/^\d+(\.\d{1,2})?$/.test(qtyRaw)
+    ) {
+      hasError = true;
+      errorBlocks[`qty_${id}`] = "Enter a number between 0.5 and 999 (up to 2 decimals).";
     }
+
+    return {
+      id,
+      label: mat.label,
+      unit: mat.unit,
+      qty: qtyRaw
+    };
+  });
+
+  // If any errors, respond with errors
+  if (hasError) {
+    await ack({
+      response_action: "errors",
+      errors: errorBlocks
+    });
+    return;
   }
-  // Remove duplicates (just in case)
-  selectedIds = [...new Set(selectedIds)];
 
-  // Build quantity input modal
-  const blocks = selectedIds.map(id => {
-    const item = getItemById(id);
-    return {
-      type: "input",
-      block_id: `qty_${id}`,
-      label: {
-        type: "plain_text",
-        text: `${item.label} → ${getHumanLabel(item.unit)}`
-      },
-      element: {
-        type: "plain_text_input",
-        action_id: "quantity",
-        placeholder: {
-          type: "plain_text",
-          text: `How many ${getHumanLabel(item.unit)}?`
-        }
-      }
-    };
-  });
-
-  await client.views.open({
-    trigger_id: body.trigger_id,
-    view: {
-      type: "modal",
-      callback_id: "materials_quantity",
-      title: { type: "plain_text", text: "Enter Quantities" },
-      submit: { type: "plain_text", text: "Review" },
-      close: { type: "plain_text", text: "Back" },
-      private_metadata: JSON.stringify({ selectedIds }),
-      blocks
-    }
-  });
-});
-
-// ========== QUANTITY MODAL: REVIEW & CONFIRM ==========
-
-app.view("materials_quantity", async ({ ack, body, view, client }) => {
   await ack();
 
-  const { selectedIds } = JSON.parse(view.private_metadata);
-  const entries = selectedIds.map(id => {
-    const item = getItemById(id);
-    const qty =
-      view.state.values[`qty_${id}`].quantity.value;
-    return {
-      ...item,
-      quantity: qty
-    };
-  });
+  // Compose summary message
+  const userTag = `<@${body.user.id}>`;
+  const summary = usedMaterials
+    .map(mat => `${mat.label} (${mat.qty} ${getHumanLabel(mat.unit)})`)
+    .join(", ");
 
-  // Build confirmation/review modal
-  const reviewBlocks = [
-    {
-      type: "section",
-      text: { type: "mrkdwn", text: "*Review & Confirm Materials Used*" }
-    },
-    { type: "divider" },
-    ...entries.map(entry => ({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `*${entry.label}*: ${entry.quantity} ${getHumanLabel(entry.unit)}`
-      }
-    }))
-  ];
+  const channel = body['channel']['id'] || view.private_metadata || null; // fallback if needed
 
-  await client.views.open({
-    trigger_id: body.trigger_id,
-    view: {
-      type: "modal",
-      callback_id: "materials_review",
-      title: { type: "plain_text", text: "Review & Confirm" },
-      submit: { type: "plain_text", text: "Confirm" },
-      close: { type: "plain_text", text: "Back" },
-      private_metadata: JSON.stringify({ entries }),
-      blocks: reviewBlocks
-    }
-  });
-});
-
-// ========== FINAL CONFIRM: LOG OR DM ==========
-
-app.view("materials_review", async ({ ack, body, view, client }) => {
-  await ack();
-
-  const { entries } = JSON.parse(view.private_metadata);
-
-  // Simple: DM user with their materials log (replace with Google Sheets logic later)
-  const userId = body.user.id;
-  const lines = entries.map(
-    entry =>
-      `• *${entry.label}*: ${entry.quantity} ${getHumanLabel(entry.unit)}`
-  );
+  // Post to the channel where the command was issued
   await client.chat.postMessage({
-    channel: userId,
-    text: `:white_check_mark: *Logged Materials Used:*\n${lines.join("\n")}`
+    channel: body['channel']['id'] || body['view']['private_metadata'] || body['response_urls']?.[0]?.channel_id,
+    text: `${userTag} used: ${summary}`
   });
-
-  // TODO: Post to channel & log to Google Sheets here!
 });
 
-// ========== START APP ==========
-
+// Start the app
 (async () => {
   await app.start(process.env.PORT || 3000);
-  console.log("⚡️ Service Hub app is running!");
+  console.log('⚡️ Service Bot is running!');
 })();
