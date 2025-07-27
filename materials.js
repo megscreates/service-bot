@@ -135,6 +135,23 @@ function getHumanLabel(unit) {
   return labels[unit] || unit;
 }
 
+// Add this function to materials.js
+function getSingularLabel(unit) {
+  const labels = {
+    "ft": "Foot",
+    "gal": "Gallon", 
+    "each": "Each",
+    "quart": "Quart",
+    "square": "Square",
+    "sheet": "Sheet",
+    "bundle": "Bundle",
+    "roll": "Roll",
+    "box": "Box",
+    "tube": "Tube"
+  };
+  return labels[unit] || unit;
+}
+
 module.exports = {
   materialCategories,
   getHumanLabel
