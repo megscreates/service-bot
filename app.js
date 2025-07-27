@@ -28,7 +28,7 @@ function getMaterialById(id) {
   return allMaterials.find(mat => mat.id === id);
 }
 
-// -------- STEP 1: Material Selection Modal --------
+// -------- STEP 1: Material Selection Modal with "Next" Button (not submit) --------
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
 
@@ -39,7 +39,6 @@ app.command('/materials', async ({ ack, body, client }) => {
         type: "modal",
         callback_id: "materials_select_modal",
         title: { type: "plain_text", text: "Materials Used" },
-        submit: { type: "plain_text", text: "Next" },
         close: { type: "plain_text", text: "Cancel" },
         blocks: [
           {
@@ -52,6 +51,17 @@ app.command('/materials', async ({ ack, body, client }) => {
               placeholder: { type: "plain_text", text: "Choose materials" },
               options: materialOptions()
             }
+          },
+          {
+            type: "actions",
+            block_id: "actions1",
+            elements: [
+              {
+                type: "button",
+                text: { type: "plain_text", text: "Next" },
+                action_id: "material_next"
+              }
+            ]
           }
         ]
       }
@@ -61,16 +71,22 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// -------- STEP 2: Quantity Entry Modal --------
-app.view('materials_select_modal', async ({ ack, body, view, client }) => {
+// -------- STEP 2: Quantity Entry Modal (on "Next" button) --------
+app.action('material_next', async ({ ack, body, client }) => {
   await ack();
 
-  // Get selected material IDs
-  const selected = view.state.values.materials_select.selected_materials.selected_options || [];
+  // Grab selected material IDs from the current view state:
+  const values = body.view.state.values;
+  const selected = values.materials_select.selected_materials.selected_options || [];
   const selectedIds = selected.map(opt => opt.value);
 
   if (selectedIds.length === 0) {
-    // If nothing selected, show an error (optional: could handle this earlier)
+    // Optionally, send an error or warning
+    await client.chat.postEphemeral({
+      channel: body.user.id,
+      user: body.user.id,
+      text: "Please select at least one material before continuing."
+    });
     return;
   }
 
@@ -92,10 +108,10 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     };
   });
 
-  // UPDATE the modal for quantities using view.id/hash
+  // Update the modal to show quantity entry
   await client.views.update({
-    view_id: view.id,
-    hash: view.hash,
+    view_id: body.view.id,
+    hash: body.view.hash,
     view: {
       type: "modal",
       callback_id: "quantity_entry_modal",
@@ -116,14 +132,12 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
 
 // -------- STEP 3: Review Modal --------
 app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
-  await ack();
-
+  // Validate and parse quantities
   const metadata = JSON.parse(view.private_metadata);
   const selectedIds = metadata.selectedIds;
   const userId = metadata.user;
   const values = view.state.values;
 
-  // Build material/quantity list and validate
   let hasError = false;
   let errorBlocks = {};
   const materialsWithQty = selectedIds.map(id => {
@@ -132,7 +146,6 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
     const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
     const qty = parseInt(qtyRaw, 10);
 
-    // Validation: must be positive integer
     if (
       isNaN(qty) ||
       qty < 1 ||
@@ -150,16 +163,17 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
     };
   });
 
-  // If errors, return error messages
   if (hasError) {
     await ack({
       response_action: "errors",
       errors: errorBlocks
     });
     return;
+  } else {
+    await ack();
   }
 
-  // Build review blocks (summary)
+  // Review blocks
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
 
@@ -184,7 +198,7 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
     }))
   ];
 
-  // UPDATE the modal to the review modal
+  // Update modal to review screen
   await client.views.update({
     view_id: view.id,
     hash: view.hash,
@@ -206,7 +220,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
 
   // Show success message (ephemeral for now)
   await client.chat.postEphemeral({
-    channel: body['channel']?.id || body['view']['private_metadata'] || body['response_urls']?.[0]?.channel_id,
+    channel: body.user.id,
     user: body.user.id,
     text: "✅ Materials submitted successfully!"
   });
