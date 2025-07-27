@@ -1,10 +1,26 @@
-const materialsData = require('./materials.json');
+// Basic materials list
+const materials = [
+  {
+    id: "INV0017225",
+    label: "Rags",
+    unit: "each",
+    category: "Everyday Basics",
+    categoryIndex: 1
+  },
+  {
+    id: "INV0000602",
+    label: "NP1 Sealant Tube (Black)",
+    unit: "each",
+    category: "Adhesives, Sealants, Coatings, & Solvents",
+    categoryIndex: 1
+  },
+  // Add a few more items to test
+];
 
 // Helper function to get materials grouped by category
 function getMaterialsByCategory() {
   const categories = {};
   
-  // Group materials by category
   materials.forEach(material => {
     if (!categories[material.category]) {
       categories[material.category] = [];
@@ -12,7 +28,7 @@ function getMaterialsByCategory() {
     categories[material.category].push(material);
   });
   
-  // Sort materials within each category by categoryIndex
+  // Sort within categories
   Object.keys(categories).forEach(category => {
     categories[category].sort((a, b) => a.categoryIndex - b.categoryIndex);
   });
