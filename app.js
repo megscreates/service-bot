@@ -210,7 +210,7 @@ app.view('materials_select_modal', async ({ ack, body, view }) => {
       block_id: `qty_${id}`,
       label: {
         type: "plain_text",
-        text: `${mat.label} - per ${getHumanLabel(mat.unit)}`, // "Material Name - per Unit" format
+        text: `${mat.label} - per ${getSingularLabel(mat.unit)}`, // "Material Name - per Unit" format
         emoji: true
       },
       element: {
