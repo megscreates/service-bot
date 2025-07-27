@@ -27,8 +27,9 @@ function formatMaterialsList(materials) {
   
   materials.forEach((mat, index) => {
     const numberEmoji = numberEmojis[index % numberEmojis.length];
-    // Regular format for output (without "per")
-    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getHumanLabel(mat.unit)}\n\n`;
+    const qty = parseInt(mat.qty, 10);
+    // Use smart function that picks singular/plural based on quantity
+    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getQuantityLabel(mat.unit, qty)}\n\n`;
   });
   
   return materialText;
