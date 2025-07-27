@@ -28,7 +28,7 @@ function getMaterialById(id) {
   return allMaterials.find(mat => mat.id === id);
 }
 
-// Open materials modal
+// -------- STEP 1: Material Selection Modal with Submit --------
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
 
@@ -37,58 +37,21 @@ app.command('/materials', async ({ ack, body, client }) => {
       trigger_id: body.trigger_id,
       view: {
         type: "modal",
-        callback_id: "dynamic_materials_modal",
+        callback_id: "materials_select_modal",
         title: { type: "plain_text", text: "Materials Used" },
-        submit: { type: "plain_text", text: "Review" },
+        submit: { type: "plain_text", text: "Next" },
         close: { type: "plain_text", text: "Cancel" },
         blocks: [
           {
-            type: "section",
-            text: { 
-              type: "mrkdwn", 
-              text: "*Select materials and enter quantities*" 
+            type: "input",
+            block_id: "materials_select",
+            label: { type: "plain_text", text: "Select materials used" },
+            element: {
+              type: "multi_static_select",
+              action_id: "selected_materials",
+              placeholder: { type: "plain_text", text: "Choose materials" },
+              options: materialOptions()
             }
-          },
-          {
-            type: "actions",
-            block_id: "add_material_btn",
-            elements: [
-              {
-                type: "button",
-                text: {
-                  type: "plain_text",
-                  text: "Add Material",
-                  emoji: true
-                },
-                style: "primary",
-                action_id: "add_material_row"
-              }
-            ]
-          },
-          // First material row
-          {
-            type: "section",
-            block_id: "material_row_1",
-            text: {
-              type: "mrkdwn",
-              text: "*Material #1*"
-            }
-          },
-          {
-            type: "actions",
-            block_id: "material_select_1",
-            elements: [
-              {
-                type: "static_select",
-                placeholder: {
-                  type: "plain_text",
-                  text: "Select material",
-                  emoji: true
-                },
-                options: materialOptions(),
-                action_id: "material_selected"
-              }
-            ]
           }
         ]
       }
@@ -98,170 +61,99 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// Handle material selection
-app.action('material_selected', async ({ ack, body, client }) => {
-  await ack();
+// -------- STEP 2: Quantity Entry Modal (using response_action) --------
+app.view('materials_select_modal', async ({ ack, body, view }) => {
+  // Get selected material IDs
+  const selected = view.state.values.materials_select.selected_materials.selected_options || [];
+  const selectedIds = selected.map(opt => opt.value);
 
-  // Get the selected material
-  const selectedOption = body.actions[0].selected_option;
-  const materialId = selectedOption.value;
-  const material = getMaterialById(materialId);
-  
-  // Get the row number from the block_id (material_select_1, material_select_2, etc)
-  const rowNum = body.actions[0].block_id.split('_').pop();
-  
-  // Check if quantity block already exists
-  const quantityBlockId = `material_qty_${rowNum}`;
-  const hasQuantityBlock = body.view.blocks.some(block => block.block_id === quantityBlockId);
-  
-  if (!hasQuantityBlock) {
-    // Create a new blocks array with the quantity input added
-    const updatedBlocks = [...body.view.blocks];
-    
-    // Find the index of the current material selection block
-    const currentBlockIndex = updatedBlocks.findIndex(block => 
-      block.block_id === `material_select_${rowNum}`
-    );
-    
-    // Insert quantity input right after the material selection
-    updatedBlocks.splice(currentBlockIndex + 1, 0, {
+  if (selectedIds.length === 0) {
+    // You could return errors here if you wanted to validate selection
+    await ack();
+    return;
+  }
+
+  // Build quantity entry blocks (one input per material)
+  const quantityBlocks = selectedIds.map(id => {
+    const mat = getMaterialById(id);
+    return {
       type: "input",
-      block_id: quantityBlockId,
+      block_id: `qty_${id}`,
       label: {
         type: "plain_text",
-        text: `Quantity (${getHumanLabel(material.unit)})`,
-        emoji: true
+        text: `${mat.label} (${getHumanLabel(mat.unit)})`
       },
       element: {
         type: "plain_text_input",
-        action_id: "quantity_value",
-        placeholder: {
-          type: "plain_text",
-          text: "Enter amount"
-        },
-        initial_value: "1"
+        action_id: "quantity_input",
+        placeholder: { type: "plain_text", text: "Quantity (whole number)" }
       }
-    });
-    
-    // Update the view with the new blocks
-    await client.views.update({
-      view_id: body.view.id,
-      hash: body.view.hash,
-      view: {
-        type: "modal",
-        callback_id: "dynamic_materials_modal",
-        title: { type: "plain_text", text: "Materials Used" },
-        submit: { type: "plain_text", text: "Review" },
-        close: { type: "plain_text", text: "Cancel" },
-        blocks: updatedBlocks
-      }
-    });
-  }
-});
-
-// Handle adding more material rows
-app.action('add_material_row', async ({ ack, body, client }) => {
-  await ack();
-  
-  // Figure out the next row number
-  const blocks = body.view.blocks;
-  let maxRowNum = 0;
-  
-  blocks.forEach(block => {
-    if (block.block_id && block.block_id.startsWith('material_row_')) {
-      const rowNum = parseInt(block.block_id.split('_').pop(), 10);
-      if (rowNum > maxRowNum) maxRowNum = rowNum;
-    }
+    };
   });
-  
-  const newRowNum = maxRowNum + 1;
-  
-  // Add a divider and new material row
-  const updatedBlocks = [...blocks];
-  
-  updatedBlocks.push(
-    {
-      type: "divider"
-    },
-    {
-      type: "section",
-      block_id: `material_row_${newRowNum}`,
-      text: {
-        type: "mrkdwn",
-        text: `*Material #${newRowNum}*`
-      }
-    },
-    {
-      type: "actions",
-      block_id: `material_select_${newRowNum}`,
-      elements: [
-        {
-          type: "static_select",
-          placeholder: {
-            type: "plain_text",
-            text: "Select material",
-            emoji: true
-          },
-          options: materialOptions(),
-          action_id: "material_selected"
-        }
-      ]
-    }
-  );
-  
-  await client.views.update({
-    view_id: body.view.id,
-    hash: body.view.hash,
+
+  // Use response_action to update the view immediately
+  await ack({
+    response_action: "update",
     view: {
       type: "modal",
-      callback_id: "dynamic_materials_modal",
-      title: { type: "plain_text", text: "Materials Used" },
+      callback_id: "quantity_entry_modal",
+      private_metadata: JSON.stringify({ selectedIds, user: body.user.id }),
+      title: { type: "plain_text", text: "Enter Quantities" },
       submit: { type: "plain_text", text: "Review" },
-      close: { type: "plain_text", text: "Cancel" },
-      blocks: updatedBlocks
+      close: { type: "plain_text", text: "Back" },
+      blocks: [
+        {
+          type: "section",
+          text: { type: "mrkdwn", text: "*Enter the quantity used for each material:*" }
+        },
+        ...quantityBlocks
+      ]
     }
   });
 });
 
-// Handle the review submission
-app.view('dynamic_materials_modal', async ({ ack, body, view, client }) => {
-  // Collect all the materials and quantities
-  const blocks = view.blocks;
-  const materialsData = [];
-  
-  // Process the blocks to extract material and quantity pairs
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    
-    if (block.block_id && block.block_id.startsWith('material_select_')) {
-      const rowNum = block.block_id.split('_').pop();
-      const materialBlock = block;
-      const quantityBlock = blocks.find(b => b.block_id === `material_qty_${rowNum}`);
-      
-      // Only process if we have both material and quantity
-      if (materialBlock && quantityBlock) {
-        // Get the selected material info
-        const materialId = materialBlock.elements[0].selected_option?.value;
-        
-        if (materialId) {
-          const material = getMaterialById(materialId);
-          const quantityValue = view.state.values[`material_qty_${rowNum}`].quantity_value.value;
-          
-          materialsData.push({
-            id: materialId,
-            label: material.label,
-            unit: material.unit,
-            qty: quantityValue
-          });
-        }
-      }
+// -------- STEP 3: Review Modal (using response_action) --------
+app.view('quantity_entry_modal', async ({ ack, view }) => {
+  // Validate and parse quantities
+  const metadata = JSON.parse(view.private_metadata);
+  const selectedIds = metadata.selectedIds;
+  const userId = metadata.user;
+  const values = view.state.values;
+
+  // Build material/quantity list and validate
+  let hasError = false;
+  let errorBlocks = {};
+  const materialsWithQty = selectedIds.map(id => {
+    const mat = getMaterialById(id);
+    const qtyBlock = values[`qty_${id}`];
+    const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
+    const qty = parseInt(qtyRaw, 10);
+
+    if (isNaN(qty) || qty < 1 || !/^\d+$/.test(qtyRaw)) {
+      hasError = true;
+      errorBlocks[`qty_${id}`] = "Enter a positive whole number (1+)";
     }
+
+    return {
+      id,
+      label: mat.label,
+      unit: mat.unit,
+      qty: qtyRaw
+    };
+  });
+
+  if (hasError) {
+    await ack({
+      response_action: "errors",
+      errors: errorBlocks
+    });
+    return;
   }
-  
-  // Build review blocks
+
+  // Build review blocks (summary)
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
-  
+
   const reviewBlocks = [
     {
       type: "section",
@@ -270,26 +162,26 @@ app.view('dynamic_materials_modal', async ({ ack, body, view, client }) => {
     {
       type: "context",
       elements: [
-        { type: "mrkdwn", text: `*User:* <@${body.user.id}>` },
+        { type: "mrkdwn", text: `*User:* <@${userId}>` },
         { type: "mrkdwn", text: `*Date:* ${dateStr}` }
       ]
     },
-    ...materialsData.map(mat => ({
+    ...materialsWithQty.map(mat => ({
       type: "section",
       fields: [
         { type: "mrkdwn", text: `*Material:*\n${mat.label}` },
-        { type: "mrkdwn", text: `*Quantity:*\n${mat.qty} ${getHumanLabel(mat.unit)}` }
+        { type: "mrkdwn", text: `*Quantity:*\n${mat.qty}` }
       ]
     }))
   ];
-  
-  // Update to review view
+
+  // Use response_action to update the view immediately
   await ack({
     response_action: "update",
     view: {
       type: "modal",
-      callback_id: "review_submission",
-      private_metadata: JSON.stringify({ materialsData, userId: body.user.id, dateStr }),
+      callback_id: "review_modal",
+      private_metadata: JSON.stringify({ materialsWithQty, userId, dateStr }),
       title: { type: "plain_text", text: "Review Submission" },
       submit: { type: "plain_text", text: "Submit" },
       close: { type: "plain_text", text: "Back" },
@@ -298,20 +190,20 @@ app.view('dynamic_materials_modal', async ({ ack, body, view, client }) => {
   });
 });
 
-// Final submission handling
-app.view('review_submission', async ({ ack, body, view, client }) => {
+// -------- STEP 4: Success Message with Nice Formatting --------
+app.view('review_modal', async ({ ack, body, view, client }) => {
   await ack();
   
   // Get the data from private_metadata
   const metadata = JSON.parse(view.private_metadata);
-  const { materialsData, userId, dateStr } = metadata;
+  const { materialsWithQty, userId, dateStr } = metadata;
 
-  // Create the nicely formatted materials list with circle numbers
+  // Create the nicely formatted materials list with filled circle numbers
   const numberEmojis = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
   
   // Build the materials text with spacing and numbered circles
   let materialsText = '';
-  materialsData.forEach((mat, index) => {
+  materialsWithQty.forEach((mat, index) => {
     const numberEmoji = numberEmojis[index % numberEmojis.length];
     materialsText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getHumanLabel(mat.unit)}\n\n`;
   });
@@ -350,9 +242,14 @@ app.view('review_submission', async ({ ack, body, view, client }) => {
     ]
   });
 
-  // Later: Send to Acumatica or other systems
+  // Optional: Format data for spreadsheet/CSV
+  const csvRows = materialsWithQty.map(mat => {
+    return `${mat.label},${mat.qty},${mat.unit}`;
+  }).join('\n');
+
+  // Later: Store data in CSV/database/etc
   console.log(`Material submission from ${userId}:`);
-  console.log(materialsData);
+  console.log(materialsWithQty);
 });
 
 // Start the app
