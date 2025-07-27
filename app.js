@@ -92,9 +92,10 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     };
   });
 
-  // PUSH new modal for quantities instead of open
-  await client.views.push({
-    trigger_id: body.trigger_id,
+  // UPDATE the modal for quantities using view.id/hash
+  await client.views.update({
+    view_id: view.id,
+    hash: view.hash,
     view: {
       type: "modal",
       callback_id: "quantity_entry_modal",
@@ -183,9 +184,10 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
     }))
   ];
 
-  // Open review modal
-  await client.views.push({
-    trigger_id: body.trigger_id,
+  // UPDATE the modal to the review modal
+  await client.views.update({
+    view_id: view.id,
+    hash: view.hash,
     view: {
       type: "modal",
       callback_id: "review_modal",
