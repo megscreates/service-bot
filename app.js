@@ -39,7 +39,7 @@ app.command('/materials', async ({ ack, body, client }) => {
         type: "modal",
         callback_id: "materials_select_modal",
         title: { type: "plain_text", text: "Materials Used" },
-        submit: { type: "plain_text", text: "Next" }, // submit is required if you have input blocks!
+        submit: { type: "plain_text", text: "Next" },
         close: { type: "plain_text", text: "Cancel" },
         blocks: [
           {
@@ -61,16 +61,15 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// -------- STEP 2: Quantity Entry Modal (swap modal on submit) --------
-app.view('materials_select_modal', async ({ ack, body, view, client }) => {
-  await ack();
-
+// -------- STEP 2: Quantity Entry Modal (using response_action) --------
+app.view('materials_select_modal', async ({ ack, body, view }) => {
   // Get selected material IDs
   const selected = view.state.values.materials_select.selected_materials.selected_options || [];
   const selectedIds = selected.map(opt => opt.value);
 
   if (selectedIds.length === 0) {
-    // Optionally: show an error, but for now just return (Slack doesn't support error on multi_static_select input)
+    // You could return errors here if you wanted to validate selection
+    await ack();
     return;
   }
 
@@ -92,9 +91,9 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     };
   });
 
-  await client.views.update({
-    view_id: view.id,
-    hash: view.hash,
+  // Use response_action to update the view immediately
+  await ack({
+    response_action: "update",
     view: {
       type: "modal",
       callback_id: "quantity_entry_modal",
@@ -113,14 +112,15 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
   });
 });
 
-// -------- STEP 3: Review Modal (swap modal on submit) --------
-app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
+// -------- STEP 3: Review Modal (using response_action) --------
+app.view('quantity_entry_modal', async ({ ack, view }) => {
   // Validate and parse quantities
   const metadata = JSON.parse(view.private_metadata);
   const selectedIds = metadata.selectedIds;
   const userId = metadata.user;
   const values = view.state.values;
 
+  // Build material/quantity list and validate
   let hasError = false;
   let errorBlocks = {};
   const materialsWithQty = selectedIds.map(id => {
@@ -129,11 +129,7 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
     const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
     const qty = parseInt(qtyRaw, 10);
 
-    if (
-      isNaN(qty) ||
-      qty < 1 ||
-      !/^\d+$/.test(qtyRaw)
-    ) {
+    if (isNaN(qty) || qty < 1 || !/^\d+$/.test(qtyRaw)) {
       hasError = true;
       errorBlocks[`qty_${id}`] = "Enter a positive whole number (1+)";
     }
@@ -152,11 +148,9 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
       errors: errorBlocks
     });
     return;
-  } else {
-    await ack();
   }
 
-  // Review blocks
+  // Build review blocks (summary)
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
 
@@ -181,9 +175,9 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
     }))
   ];
 
-  await client.views.update({
-    view_id: view.id,
-    hash: view.hash,
+  // Use response_action to update the view immediately
+  await ack({
+    response_action: "update",
     view: {
       type: "modal",
       callback_id: "review_modal",
@@ -199,13 +193,41 @@ app.view('quantity_entry_modal', async ({ ack, body, view, client }) => {
 // -------- STEP 4: Success Message --------
 app.view('review_modal', async ({ ack, body, view, client }) => {
   await ack();
+  
+  // Get the data from private_metadata
+  const metadata = JSON.parse(view.private_metadata);
+  const { materialsWithQty, userId } = metadata;
 
-  // Show success message (ephemeral for now)
-  await client.chat.postEphemeral({
+  // Optional: Format data for spreadsheet/CSV
+  const csvRows = materialsWithQty.map(mat => {
+    return `${mat.label},${mat.qty},${mat.unit}`;
+  }).join('\n');
+
+  // For now, just post back to the user's DM
+  await client.chat.postMessage({
     channel: body.user.id,
-    user: body.user.id,
-    text: "✅ Materials submitted successfully!"
+    blocks: [
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: "✅ *Materials submission complete!*" }
+      },
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: "Here's what you submitted:" }
+      },
+      ...materialsWithQty.map(mat => ({
+        type: "section",
+        fields: [
+          { type: "mrkdwn", text: `*Material:*\n${mat.label}` },
+          { type: "mrkdwn", text: `*Quantity:*\n${mat.qty} ${getHumanLabel(mat.unit)}` }
+        ]
+      }))
+    ]
   });
+
+  // Later: Store data in CSV/database/etc
+  console.log(`Material submission from ${userId}:`);
+  console.log(materialsWithQty);
 });
 
 // Start the app
