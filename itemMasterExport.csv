@@ -1,0 +1,299 @@
+inventoryID,category,categoryIndex,itemDescription,fieldUOM,keywords
+INV0000602,"Adhesives, Sealants, Coatings, & Solvents",1,NP1 Sealant Tube (Black),each,SIKA
+INV0000599,"Adhesives, Sealants, Coatings, & Solvents",2,NP1 Sealant Tube (White),each,SIKA
+INV0000081,"Adhesives, Sealants, Coatings, & Solvents",3,JM Edge Sealant Bottle,each,Bottle
+INV0016998,"Adhesives, Sealants, Coatings, & Solvents",4,Lap Sealant Tube,each,Tube
+INV0000614,"Adhesives, Sealants, Coatings, & Solvents",5,MH Lap Caulk Tube,each,Sealant Mule Hide
+INV0000079,"Adhesives, Sealants, Coatings, & Solvents",6,JM Lap Caulk Tube,each,Sealant
+INV0000301,"Adhesives, Sealants, Coatings, & Solvents",7,JM Water Cutoff Mastic Tube,each,Sealant
+INV0000639,"Adhesives, Sealants, Coatings, & Solvents",8,TRMC Water Cutoff Mastic Sausage,each,Tremco Sealant
+INV0000646,"Adhesives, Sealants, Coatings, & Solvents",9,CL Pourable Sealant Pouch (White),each,ChemLink
+INV0000645,"Adhesives, Sealants, Coatings, & Solvents",10,CL Pourable Sealant Pouch (Black),each,ChemLink
+INV0000656,"Adhesives, Sealants, Coatings, & Solvents",11,JM Pourable Sealant Pouch (Grey),each,Pouch
+INV0017003,"Adhesives, Sealants, Coatings, & Solvents",12,CAR Pourable Sealant [1gal],per quart,
+INV0017022,"Adhesives, Sealants, Coatings, & Solvents",13,CAR TPO Pourable Sealant [1gal],per quart,
+INV0000638,"Adhesives, Sealants, Coatings, & Solvents",14,TRMC Dymonic 100 Sausage (White),each,Tremco
+INV0000618,"Adhesives, Sealants, Coatings, & Solvents",15,TRMC Dymonic 100 Sausage (Precast White),each,Tremco
+INV0000637,"Adhesives, Sealants, Coatings, & Solvents",16,TRMC Dymonic 100 Sausage (Black),each,Tremco
+INV0017198,"Adhesives, Sealants, Coatings, & Solvents",17,MH Repair Hero (Black),per gal,Mule Hide Sealant Seal-Fast
+INV0017451,"Adhesives, Sealants, Coatings, & Solvents",18,MH Repair Hero (White),per gal,Mule Hide Sealant Seal-Fast
+INV0000640,"Adhesives, Sealants, Coatings, & Solvents",19,Karna-Flex Sealant,per gal,KARNAK
+INV0000686,"Adhesives, Sealants, Coatings, & Solvents",20,GacoPatch,per gal,Sealant
+INV0017133,"Adhesives, Sealants, Coatings, & Solvents",21,Uniflex Sealant,per gal,
+INV0000074,"Adhesives, Sealants, Coatings, & Solvents",22,TPO Adhesive Solvent,per gal,
+INV0017150,"Adhesives, Sealants, Coatings, & Solvents",23,KARNAK 169 Coating,per gal,Non-Fibered nonfib non fib
+INV0017132,"Adhesives, Sealants, Coatings, & Solvents",24,Uniflex Coating,per gal,
+INV0017130,"Adhesives, Sealants, Coatings, & Solvents",25,ALSAN Flashing,per quart,Coating Liquid
+INV0000617,"Adhesives, Sealants, Coatings, & Solvents",26,ALSAN RS 230 FIELD,per gal,Coating
+INV0000082,"Adhesives, Sealants, Coatings, & Solvents",27,TPO Primer,per quart,
+INV0017004,"Adhesives, Sealants, Coatings, & Solvents",28,LVOC Primer,per quart,
+INV0000307,"Adhesives, Sealants, Coatings, & Solvents",29,Asphalt Primer,per gal,
+INV0000127,"Adhesives, Sealants, Coatings, & Solvents",30,EPDM Tape Primer,per quart,
+INV0000641,"Adhesives, Sealants, Coatings, & Solvents",31,Vapor Barrier SA Primer,per gal,
+INV0000642,"Adhesives, Sealants, Coatings, & Solvents",32,Vapor Barrier SA Primer (LVOC),per gal,
+INV0017096,"Adhesives, Sealants, Coatings, & Solvents",33,"Uniflex Seam Tape [2""]",each,Roll
+INV0017098,"Adhesives, Sealants, Coatings, & Solvents",34,"Uniflex Seam Tape [4""]",each,Roll
+INV0017099,"Adhesives, Sealants, Coatings, & Solvents",35,"Uniflex Seam Tape [6""]",each,Roll
+INV0000655,"Adhesives, Sealants, Coatings, & Solvents",36,Butyl Seam Tape,each,Roll
+INV0000120,"Adhesives, Sealants, Coatings, & Solvents",37,EPDM Bonding Cement (LVOC),per gal,EPDM LVOC
+INV0000119,"Adhesives, Sealants, Coatings, & Solvents",38,EPDM Bonding Cement (Water Based),per gal,EPDM Water Based
+INV0000652,"Adhesives, Sealants, Coatings, & Solvents",39,KARNAK 19 (Summer),per gal,
+INV0000653,"Adhesives, Sealants, Coatings, & Solvents",40,KARNAK 19 (Winter),per gal,
+INV0017151,"Adhesives, Sealants, Coatings, & Solvents",41,KARNAK 19 ULTRA (Summer),per gal,
+INV0000654,"Adhesives, Sealants, Coatings, & Solvents",42,KARNAK 19 ULTRA (Winter),per gal,
+INV0017152,"Adhesives, Sealants, Coatings, & Solvents",43,KARNAK 19 ULTRA Tube,each,
+INV0000596,"Adhesives, Sealants, Coatings, & Solvents",44,RML Lucas 6500 Flashing Cement (Black),per gal,Flashing
+INV0000595,"Adhesives, Sealants, Coatings, & Solvents",45,RML Lucas 6500 Flashing Cement (White),per gal,Flashing
+INV0001251,Boards & ISO,1,"OSB - 7/16"" x 8ft",per sheet,OSB Sheet Square
+INV0001258,Boards & ISO,2,"OSB - 3/4"" x 8ft",per sheet,OSB Sheet Square
+INV0017066,Boards & ISO,6,"Lumber - 2"" x 6"" x 10ft",each,Lumber Sheet Square
+INV0001253,Boards & ISO,3,"Board - 2"" x 4"" x 10ft",each,Sheet Square
+INV0001254,Boards & ISO,4,"Board - 2"" x 6"" x 10ft",each,Sheet Square
+INV0001255,Boards & ISO,5,"Board - 2"" x 8"" x 10ft",each,Sheet Square
+INV0001256,Boards & ISO,7,"Board - 2"" x 10"" x 10ft",each,Sheet Square
+INV0001257,Boards & ISO,8,"Board - 2"" x 12"" x 10ft",each,Sheet Square
+INV0000689,Boards & ISO,9,"JM Fiberboard - 1/2""",per square,Fiberboard Sheet Square
+INV0000690,Boards & ISO,10,"JM Fiberboard - 1/2"" - (Coated)",per square,Fiberboard Sheet Square
+INV0017067,Boards & ISO,11,"Plywood - 1/2"" x 8ft",per square,Plywood Sheet Square
+INV0017068,Boards & ISO,12,"Plywood - 3/4"" x 8ft",per square,Plywood Sheet Square
+INV0000304,Boards & ISO,13,"JM Invinsa Board - 1/4"" x 8ft",per square,Invinsa
+INV0000714,Boards & ISO,14,"JM ProtectoR HD Cover Board - 1/4"" x 4ft",per square,ProtectoR HD Sheet Square
+INV0000715,Boards & ISO,15,"JM ProtectoR HD Cover Board - 1/4"" x 8ft",per square,ProtectoR HD  Sheet Square
+INV0000691,Boards & ISO,16,"Securock Board - 1/4"" x 4ft",per square,Securock Sheet Square
+INV0000692,Boards & ISO,17,"Securock Board - 1/4"" x 8ft",per square,Securock Sheet Square
+INV0000696,Boards & ISO,18,"Securock Board - 1/2"" x 8ft",per square,Securock Sheet Square
+INV0000702,Boards & ISO,19,"DensDeck Prime Board - 1/2"" x 8ft",per square,DensDeck Prime Sheet Square
+INV0000704,Boards & ISO,20,"DensDeck Prime Board - 5/8"" x 8ft",per square,DensDeck Prime Sheet Square
+INV0017061,Boards & ISO,21,"JM All-Purpose - 1.5"" x 8ft",per square,AP Sheet Square
+INV0000130,Boards & ISO,22,"JM ISO ENRGY - 3.5"" x 8ft",per square,Sheet Square
+INV0000131,Boards & ISO,23,"JM ISO ENRGY 3 - 1.0"" x 4ft",per square,Sheet Square
+INV0000140,Boards & ISO,24,"JM ISO ENRGY 3 - 1.5"" x 4ft",per square,Sheet Square
+INV0000150,Boards & ISO,25,"JM ISO ENRGY 3 - 2.0"" x 4ft",per square,Sheet Square
+INV0000158,Boards & ISO,26,"JM ISO ENRGY 3 - 2.5"" x 4ft",per square,Sheet Square
+INV0000168,Boards & ISO,27,"JM ISO ENRGY 3 - 3.0"" x 4ft",per square,Sheet Square
+INV0000132,Boards & ISO,28,"JM ISO ENRGY 3 - 1.0"" x 8ft",per square,Sheet Square
+INV0000141,Boards & ISO,29,"JM ISO ENRGY 3 - 1.5"" x 8ft",per square,Sheet Square
+INV0000151,Boards & ISO,30,"JM ISO ENRGY 3 - 2.0"" x 8ft",per square,Sheet Square
+INV0000159,Boards & ISO,31,"JM ISO ENRGY 3 - 2.5"" x 8ft",per square,Sheet Square
+INV0000161,Boards & ISO,32,"JM ISO ENRGY 3 - 2.6"" x 8ft",per square,Sheet Square
+INV0000169,Boards & ISO,33,"JM ISO ENRGY 3 - 3.0"" x 8ft",per square,Sheet Square
+INV0001189,Boards & ISO,34,"JM ISO ENRGY 3 CGF - 2.0"" x 4ft",per square,Sheet Square
+INV0001070,Boards & ISO,35,"JM ISO Tapered - A  (1/8"")  1.0""- 1.5""",per sheet,Sheet Square
+INV0001069,Boards & ISO,36,"JM ISO Tapered - AA (1/8"")  0.5""- 1.0""",per sheet,Sheet Square
+INV0001071,Boards & ISO,37,"JM ISO Tapered - B  (1/8"")  1.5""- 2.0""",per sheet,Sheet Square
+INV0001072,Boards & ISO,38,"JM ISO Tapered - C  (1/8"")  2.0""- 2.5""",per sheet,Sheet Square
+INV0001079,Boards & ISO,39,"JM ISO Tapered - Q  (1/2"")  0.5""- 1.0""",per sheet,Sheet Square
+INV0001076,Boards & ISO,40,"JM ISO Tapered - X  (1/4"")  0.5""- 1.5""",per sheet,Sheet Square
+INV0001077,Boards & ISO,41,"JM ISO Tapered - Y  (1/4"")  1.5""- 2.5""",per sheet,Sheet Square
+INV0001234,Boards & ISO,42,"JM ISO Tapered CGF - A  (1/8"")  1.0""- 1.5""",per sheet,Sheet Square
+INV0001233,Boards & ISO,43,"JM ISO Tapered CGF - AA (1/8"")  0.5""- 1.0""",per sheet,Sheet Square
+INV0001235,Boards & ISO,44,"JM ISO Tapered CGF - B  (1/8"")  1.5""- 2.0""",per sheet,Sheet Square
+INV0001236,Boards & ISO,45,"JM ISO Tapered CGF - C  (1/8"")  2.0""- 2.5""",per sheet,Sheet Square
+INV0001243,Boards & ISO,46,"JM ISO Tapered CGF - Q  (1/2"")  0.5""- 1.0""",per sheet,Sheet Square
+INV0001240,Boards & ISO,47,"JM ISO Tapered CGF - X  (1/4"")  0.5""- 1.5""",per sheet,Sheet Square
+INV0001241,Boards & ISO,48,"JM ISO Tapered CGF - Y  (1/4"")  1.5""- 2.5""",per sheet,Sheet Square
+INV0001108,Boards & ISO,49,"Sarnatherm ISO - 2.0"" x 4ft",per square,Sheet Square
+INV0001162,Boards & ISO,50,"SARNAFIL ISO Tapered - Q  (1/2"")  0.5""- 1.0""",per sheet,Sheet Square
+INV0001159,Boards & ISO,51,"SARNAFIL ISO Tapered - X  (1/4"")  0.5""- 1.5""",per sheet,Sheet Square
+INV0016960,"EPDM Membrane, Tape, & Flashing Details",1,EPDM R 45MIL [10ft x 100ft],per linear ft,Membrane Rein Roll
+INV0016964,"EPDM Membrane, Tape, & Flashing Details",2,EPDM NR 45MIL [10ft x 100ft],per linear ft,Membrane Nonrein Roll
+INV0016965,"EPDM Membrane, Tape, & Flashing Details",3,EPDM R 60MIL [10ft x 100ft],per linear ft,Membrane Rein Roll
+INV0000091,"EPDM Membrane, Tape, & Flashing Details",4,EPDM NR 60MIL [10ft x 50ft],per linear ft,Membrane Nonrein non rein Roll
+INV0016966,"EPDM Membrane, Tape, & Flashing Details",5,EPDM NR 60MIL [20ft x 100ft] (CAR),per linear ft,Membrane Nonrein Roll
+INV0000742,"EPDM Membrane, Tape, & Flashing Details",6,"EPDM Cover Strip [6""] (FIR)",per linear ft,Roll Tape
+INV0016974,"EPDM Membrane, Tape, & Flashing Details",7,"EPDM Cover Strip [6""]",per linear ft,Roll Tape
+INV0016975,"EPDM Membrane, Tape, & Flashing Details",8,"EPDM Cover Strip [9""]",per linear ft,Roll Tape
+INV0016973,"EPDM Membrane, Tape, & Flashing Details",9,"EPDM Cover Strip [12""]",per linear ft,Roll Tape
+INV0000109,"EPDM Membrane, Tape, & Flashing Details",10,"EPDM P&S Cover Strip [6""]",per linear ft,Roll Tape
+INV0000110,"EPDM Membrane, Tape, & Flashing Details",11,"EPDM P&S Cover Strip [9""]",per linear ft,Roll Tape
+INV0000111,"EPDM Membrane, Tape, & Flashing Details",12,"EPDM P&S Cover Strip [12""]",per linear ft,Roll Tape
+INV0000114,"EPDM Membrane, Tape, & Flashing Details",13,"EPDM P&S RTS [6""]",per linear ft,RTS Roll Tape
+INV0000115,"EPDM Membrane, Tape, & Flashing Details",14,"EPDM Seam Tape [3""]",per linear ft,Roll Tape
+INV0000116,"EPDM Membrane, Tape, & Flashing Details",15,"EPDM Seam Tape [6""]",per linear ft,Roll Tape
+INV0017010,"EPDM Membrane, Tape, & Flashing Details",16,"EPDM SecurTape [3""]",per linear ft,Roll Tape
+INV0017011,"EPDM Membrane, Tape, & Flashing Details",17,"EPDM SecurTape [6""]",per linear ft,Roll Tape
+INV0017005,"EPDM Membrane, Tape, & Flashing Details",18,"EPDM Sure-Seal RUSS [6""]",per linear ft,Roll Tape
+INV0017006,"EPDM Membrane, Tape, & Flashing Details",19,"EPDM Sure-Seal RUSS [9""]",per linear ft,Roll Tape
+INV0017029,"EPDM Membrane, Tape, & Flashing Details",20,EPDM P&S Walkway,each,P&S Roll Safety Pad
+INV0000107,"EPDM Membrane, Tape, & Flashing Details",21,EPDM P&S Pipe Boot,each,Flashing Details
+INV0017494,"EPDM Membrane, Tape, & Flashing Details",22,EPDM Pipe Boot,each,Flashing Details
+INV0000726,"EPDM Membrane, Tape, & Flashing Details",23,EPDM Prefab Boot,each,Prefab Flashing Details
+INV0000106,"EPDM Membrane, Tape, & Flashing Details",24,EPDM P&S Corner,each,Membrane
+INV0000739,"EPDM Membrane, Tape, & Flashing Details",25,"EPDM Corner Curb Flashing [18""]",per linear ft,Corner Roll Details
+INV0000740,"EPDM Membrane, Tape, & Flashing Details",26,"EPDM Corner Curb Flashing [24""]",per linear ft,Corner Roll Details
+INV0016957,"EPDM Membrane, Tape, & Flashing Details",27,"EPDM Sure-Seal Curb Flashing [20""]",per linear ft,Sure-Seal Roll Details
+INV0000101,"EPDM Membrane, Tape, & Flashing Details",28,"EPDM P&S Flashing [6"" x 100ft] (Cured)",per linear ft,Roll Details
+INV0016967,"EPDM Membrane, Tape, & Flashing Details",29,"EPDM P&S Flashing [6"" x 100ft] (Uncured)",per linear ft,Roll Details
+INV0000104,"EPDM Membrane, Tape, & Flashing Details",30,"EPDM P&S Flashing [9"" x 50ft] (Cured)",per linear ft,Roll Details
+INV0016968,"EPDM Membrane, Tape, & Flashing Details",31,"EPDM P&S Flashing [9"" x 50ft] (Uncured)",per linear ft,Roll Details
+INV0000105,"EPDM Membrane, Tape, & Flashing Details",32,"EPDM P&S Flashing [12"" x 50ft] (Cured)",per linear ft,Roll Details
+INV0016956,"EPDM Membrane, Tape, & Flashing Details",33,"EPDM P&S Flashing [12"" x 50ft] (Uncured)",per linear ft,Roll Details
+INV0000459,Fasteners,1,"Galvalume-Coated Plate [2""]",each,Steel
+INV0000460,Fasteners,2,"Galvalume-Coated Plate [3""]",each,Steel
+INV0000465,Fasteners,3,RhinoBond Plate (PVC),each,PVC
+INV0000464,Fasteners,4,RhinoBond Plate (TPO),each,TPO
+INV0000405,Fasteners,5,"AP #14 Phillips [1.25""]",each,X XTRA Extra High Load Phillips
+INV0000406,Fasteners,6,"AP #14 Phillips [1.75""]",each,X XTRA Extra High Load Phillips
+INV0000415,Fasteners,7,"AP #14 Phillips [10""]",each,X XTRA Extra High Load Phillips
+INV0000416,Fasteners,8,"AP #14 Phillips [11""]",each,X XTRA Extra High Load Phillips
+INV0000417,Fasteners,9,"AP #14 Phillips [12""]",each,X XTRA Extra High Load Phillips
+INV0000418,Fasteners,10,"AP #14 Phillips [14""]",each,X XTRA Extra High Load Phillips
+INV0000419,Fasteners,11,"AP #14 Phillips [16""]",each,X XTRA Extra High Load
+INV0000420,Fasteners,12,"AP #14 Phillips [18""]",each,X XTRA Extra High Load
+INV0000407,Fasteners,13,"AP #14 Phillips [2""]",each,X XTRA Extra High Load Phillips
+INV0000421,Fasteners,14,"AP #14 Phillips [20""]",each,X XTRA Extra High Load
+INV0000422,Fasteners,15,"AP #14 Phillips [22""]",each,X XTRA Extra High Load
+INV0000423,Fasteners,16,"AP #14 Phillips [24""]",each,X XTRA Extra High Load
+INV0000408,Fasteners,17,"AP #14 Phillips [3""]",each,X XTRA Extra High Load Phillips
+INV0000409,Fasteners,18,"AP #14 Phillips [4""]",each,X XTRA Extra High Load Phillips
+INV0000410,Fasteners,19,"AP #14 Phillips [5""]",each,X XTRA Extra High Load Phillips
+INV0000411,Fasteners,20,"AP #14 Phillips [6""]",each,X XTRA Extra High Load Phillips
+INV0000412,Fasteners,21,"AP #14 Phillips [7""]",each,X XTRA Extra High Load Phillips
+INV0000413,Fasteners,22,"AP #14 Phillips [8""]",each,X XTRA Extra High Load Phillips
+INV0000414,Fasteners,23,"AP #14 Phillips [9""]",each,X XTRA Extra High Load Phillips
+INV0000369,Fasteners,24,"HL #15 Phillips [1.25""]",each,High Load Phillips
+INV0000378,Fasteners,25,"HL #15 Phillips [10""]",each,High Load Phillips
+INV0000379,Fasteners,26,"HL #15 Phillips [11""]",each,High Load Phillips
+INV0000380,Fasteners,27,"HL #15 Phillips [12""]",each,High Load Phillips
+INV0000381,Fasteners,28,"HL #15 Phillips [14""]",each,High Load Phillips
+INV0000382,Fasteners,29,"HL #15 Phillips [16""]",each,High Load Phillips
+INV0000383,Fasteners,30,"HL #15 Phillips [18""]",each,High Load Phillips
+INV0000384,Fasteners,31,"HL #15 Phillips [20""]",each,High Load Phillips
+INV0000371,Fasteners,32,"HL #15 Phillips [3""]",each,High Load Phillips
+INV0000372,Fasteners,33,"HL #15 Phillips [4""]",each,High Load Phillips
+INV0000373,Fasteners,34,"HL #15 Phillips [5""]",each,High Load Phillips
+INV0000374,Fasteners,35,"HL #15 Phillips [6""]",each,High Load Phillips
+INV0000375,Fasteners,36,"HL #15 Phillips [7""]",each,High Load Phillips
+INV0000376,Fasteners,37,"HL #15 Phillips [8""]",each,High Load Phillips
+INV0000377,Fasteners,38,"HL #15 Phillips [9""]",each,High Load Phillips
+INV0000395,Fasteners,39,"HL #15 Plate [2.375""]",each,High Load Phillips
+INV0000388,Fasteners,40,"XHL #21 Phillips [5"" Fastener]",each,X XTRA Extra High Load
+INV0000396,Fasteners,41,"XHL #21 Plate [3"" Fastener]",each,X XTRA Extra High Load Phillips
+INV0000346,Fasteners,45,"UF #12 [3"" Plate]",each,UF Plate
+INV0000332,Fasteners,46,"UF #12 [5"" Fastener]",each,UF Phillips
+INV0000334,Fasteners,47,"UF #12 [7"" Fastener]",each,UF Phillips
+INV0016991,Fasteners,48,"HP-X Fastener [2.375""]",each,CAR
+INV0016992,Fasteners,49,"HP-X Fastener [4""]",each,CAR
+INV0016993,Fasteners,50,"HP-X Fastener [5""]",each,CAR
+INV0016996,Fasteners,51,"HP-X Fastener [8""]",each,CAR
+INV0016979,Fasteners,52,"HP Fastener [1.25""]",each,CAR
+INV0016980,Fasteners,53,"HP Fastener [10""]",each,CAR
+INV0016981,Fasteners,54,"HP Fastener [11""]",each,CAR
+INV0016982,Fasteners,55,"HP Fastener [12""]",each,CAR
+INV0016983,Fasteners,56,"HP Fastener [2""]",each,CAR
+INV0016984,Fasteners,57,"HP Fastener [3""]",each,CAR
+INV0016985,Fasteners,58,"HP Fastener [4""]",each,CAR
+INV0016986,Fasteners,59,"HP Fastener [5""]",each,CAR
+INV0016987,Fasteners,60,"HP Fastener [6""]",each,CAR
+INV0016988,Fasteners,61,"HP Fastener [7""]",each,CAR
+INV0016989,Fasteners,62,"HP Fastener [8""]",each,CAR
+INV0016990,Fasteners,63,"HP Fastener [9""]",each,CAR
+INV0000612,Misc Basics,6,409 Cleaner,per gal,409.000
+INV0016999,Misc Basics,9,CAR Weathered Mem Cleaner,per gal,Weathered Mem Membrane
+INV0017225,Misc Basics,1,Rags,each,Towel nonstock non stock
+INV0017337,Misc Basics,2,Garbage Bags,each,Trash nonstock non stock
+INV0017226,Misc Basics,3,Pair of Gloves,each,nonstock non stock
+INV0017228,Misc Basics,4,Chip Brush,each,nonstock non stock
+INV0017414,Misc Basics,5,Masking Tape,each,Roll nonstock non stock
+INV0011449,Misc Basics,10,Roller Cover,each,nonstock non stock
+INV0011450,Misc Basics,11,Roller Frame,each,nonstock non stock
+INV0017372,Misc Basics,12,Spray Foam Can,each,Can nonstock non stock
+INV0017123,Misc Basics,13,"Mesh [4"" x 50ft]",per linear ft,SOPRASEAL Roll
+INV0017121,Misc Basics,14,"Mesh [6"" x 50ft]",per linear ft,SOPRASEAL Roll
+INV0017124,Misc Basics,15,"Mesh [6"" x 100ft]",per linear ft,SOPRASEAL Roll
+INV0017122,Misc Basics,16,"Mesh [12"" x 100ft]",per linear ft,SOPRASEAL Roll
+INV0000777,Misc Basics,17,"Clamp [1""- 3""]",each,Fastener
+INV0000778,Misc Basics,18,"Clamp [3""- 6""]",each,Fastener
+INV0000779,Misc Basics,19,"Clamp [6""- 12""]",each,Fastener
+INV0017373,Misc Basics,20,Reciprocating Saw (Metal),each,Metal
+INV0017374,Misc Basics,21,Reciprocating Saw (Wood),each,Wood
+INV0000461,Misc Basics,22,Termination Bar,each,
+INV0017139,Misc Basics,23,Coil Nail,each,Coil Nail
+INV0000781,Misc Basics,24,Metal to Metal Screw,each,Metal Screw
+INV0000782,Misc Basics,25,Metal to Wood Screw,each,Metal Wood Screw
+INV0017002,Misc Basics,26,Seam Plate,each,Seam Plate
+INV0017493,Misc Basics,27,SecurFast Insulation Plate,each,SecurFast Insulation Plate
+INV0000688,Misc Basics,28,Visqueen Plastic Sheeting,per linear ft,Roll
+INV0017227,Misc Basics,7,MEK Cleaner,per quart,MEK nonstock non stock
+INV0000685,Misc Basics,8,MH Weathered Mem Cleaner,per quart,MH Mule Hide Weathered Membrane
+INV0000666,Misc Overflow,2,CL MetaLink Sealant Tube (Almond),each,ML Tube
+INV0000683,Misc Overflow,3,CL MetaLink Sealant Tube (Brandywine),each,ML Tube
+INV0000678,Misc Overflow,4,CL MetaLink Sealant Tube (Charcoal Grey),each,ML Tube
+INV0000674,Misc Overflow,5,CL MetaLink Sealant Tube Colonial Red),each,ML Tube
+INV0000670,Misc Overflow,6,CL MetaLink Sealant Tube (Copper Penny),each,ML Tube
+INV0000672,Misc Overflow,7,CL MetaLink Sealant Tube (Dark Bronze),each,ML Tube
+INV0000682,Misc Overflow,8,CL MetaLink Sealant Tube (Forest Green),each,ML Tube
+INV0000660,Misc Overflow,9,CL MetaLink Sealant Tube (Hartfoord),each,ML Tube
+INV0000679,Misc Overflow,10,CL MetaLink Sealant Tube (Mansard Brown),each,ML Tube
+INV0000668,Misc Overflow,11,CL MetaLink Sealant Tube (Medium Bronze),each,ML Tube
+INV0000665,Misc Overflow,12,CL MetaLink Sealant Tube (Regal Blue),each,ML Tube
+INV0000662,Misc Overflow,13,CL MetaLink Sealant Tube (Regal Red),each,ML Tube
+INV0000669,Misc Overflow,14,CL MetaLink Sealant Tube (Sierra Tan),each,ML Tube
+INV0000676,Misc Overflow,15,CL MetaLink Sealant Tube (Slate Grey),each,ML Tube
+INV0000681,Misc Overflow,16,CL MetaLink Sealant Tube (Terracotta),each,ML Tube
+INV0000601,Misc Overflow,17,NP1 Sealant Tube (Limestone),each,Tube SIKA
+INV0000603,Misc Overflow,18,NP1 Sealant Tube (Medium Bronze),each,Tube SIKA
+INV0000607,Misc Overflow,19,NP1 Sealant Tube (Special Bronze),each,Tube SIKA
+INV0000600,Misc Overflow,20,NP1 Sealant Tube (Stone Grey),each,Tube SIKA
+INV0000604,Misc Overflow,21,NP1 Sealant Tube (Aluminum Grey),each,Tube SIKA
+INV0000606,Misc Overflow,22,NP1 Sealant Tube (Off White),each,Tube SIKA
+INV0000608,Misc Overflow,23,NP1 Sealant Tube (Redwood Tan),each,Tube SIKA
+INV0000605,Misc Overflow,24,NP1 Sealant Tube (Tan),each,Tube SIKA
+INV0000609,Misc Overflow,25,NP1 Sealant Tube (Grey),each,Tube SIKA
+INV0000800,Misc Overflow,43,Sarnadisc ,each,Sarnadisc Steel Galvalume-Coated Disc
+INV0000793,Misc Overflow,44,Sarnaplate,each,Sarnaplate Steel Galvalume-Coated Plate
+INV0000819,Misc Overflow,45,"Sikaplan #14 [1.25""]",each,Sikaplan #14
+INV0000829,Misc Overflow,46,"Sikaplan #14 [10""]",each,Sikaplan #14
+INV0000830,Misc Overflow,47,"Sikaplan #14 [11""]",each,Sikaplan #14
+INV0000823,Misc Overflow,48,"Sikaplan #14 [4""]",each,Sikaplan #14
+INV0000824,Misc Overflow,49,"Sikaplan #14 [5""]",each,Sikaplan #14
+INV0000838,Misc Overflow,50,"Sikaplan #15 [6""]",each,Sikaplan #15
+INV0000622,Misc Overflow,26,TRMC Dymonic 100 Sausage (Almond),each,Tremco Sausage
+INV0000629,Misc Overflow,27,TRMC Dymonic 100 Sausage (Aluminum Stone),each,Tremco Sausage
+INV0000619,Misc Overflow,28,TRMC Dymonic 100 Sausage (Anodized Aluminum),each,Tremco Sausage
+INV0000631,Misc Overflow,29,TRMC Dymonic 100 Sausage (Beige),each,Tremco Sausage
+INV0000635,Misc Overflow,30,TRMC Dymonic 100 Sausage (Bronze),each,Tremco Sausage
+INV0000628,Misc Overflow,31,TRMC Dymonic 100 Sausage (Buff),each,Tremco Sausage
+INV0000636,Misc Overflow,32,TRMC Dymonic 100 Sausage (Dark Bronze),each,Tremco Sausage
+INV0000624,Misc Overflow,33,TRMC Dymonic 100 Sausage (Grey Stone),each,Tremco Sausage
+INV0000634,Misc Overflow,34,TRMC Dymonic 100 Sausage (Hartford Green),each,Tremco Sausage
+INV0000620,Misc Overflow,35,TRMC Dymonic 100 Sausage (Ivory),each,Tremco Sausage
+INV0000632,Misc Overflow,36,TRMC Dymonic 100 Sausage (Light Bronze),each,Tremco Sausage
+INV0000625,Misc Overflow,37,TRMC Dymonic 100 Sausage (Limestone),each,Tremco Sausage
+INV0000627,Misc Overflow,38,TRMC Dymonic 100 Sausage (Natural Clay),each,Tremco Sausage
+INV0000633,Misc Overflow,39,TRMC Dymonic 100 Sausage (Redwood Tan),each,Tremco Sausage
+INV0000630,Misc Overflow,40,TRMC Dymonic 100 Sausage (Sandalwood),each,Tremco Sausage
+INV0000626,Misc Overflow,41,TRMC Dymonic 100 Sausage (Grey),each,Tremco Sausage
+INV0000621,Misc Overflow,42,TRMC Dymonic 100 Sausage (Off White),each,Tremco Sausage
+INV0017030,Misc Overflow,1,CAR Water Cutoff Mastic Tube,each,Sealant Tube
+INV0000198,"PVC Membrane, Tape, & Flashing Details",1,PVC 50MIL [3.25ft x 100ft] (Grey),per linear ft,Membrane Roll
+INV0000195,"PVC Membrane, Tape, & Flashing Details",2,PVC 50MIL [5ft x 100ft] (White),per linear ft,Membrane Roll
+INV0011648,"PVC Membrane, Tape, & Flashing Details",3,PVC 60MIL [10ft x 100ft] (White),per linear ft,Membrane Roll
+INV0000210,"PVC Membrane, Tape, & Flashing Details",4,PVC 60MIL [5ft x 100ft],per linear ft,Membrane Roll
+INV0000224,"PVC Membrane, Tape, & Flashing Details",5,PVC 60MIL [6.33ft x 100ft],per linear ft,Membrane Roll
+INV0017216,"PVC Membrane, Tape, & Flashing Details",6,PVC Pipe Boot,each,Flashing Lead
+INV0000271,"PVC Membrane, Tape, & Flashing Details",7,PVC Coated Metal (Grey),per sheet,Flashing Sheet
+INV0000270,"PVC Membrane, Tape, & Flashing Details",8,PVC Coated Metal (White),per sheet,Flashing Sheet
+INV0000272,"PVC Membrane, Tape, & Flashing Details",9,PVC Coated Metal (Sandstone),per sheet,Flashing Sheet
+INV0000273,"PVC Membrane, Tape, & Flashing Details",10,PVC Walkway (Grey),per linear ft,Roll Safety Pad
+INV0000274,"PVC Membrane, Tape, & Flashing Details",11,PVC Walkway (Sandstone),per linear ft,Roll Safety Pad
+INV0000275,"PVC Membrane, Tape, & Flashing Details",12,PVC Walkway (Yellow),per linear ft,Roll Safety Pad
+INV0000010,"TPO Membrane, Tape, & Flashing Details",1,TPO 60MIL [5ft] (White),per linear ft,Membrane Roll
+INV0000012,"TPO Membrane, Tape, & Flashing Details",2,TPO 60MIL [5ft] (Grey),per linear ft,Membrane Roll
+INV0000013,"TPO Membrane, Tape, & Flashing Details",3,TPO 60MIL [5ft] (Tan),per linear ft,Membrane Roll
+INV0000015,"TPO Membrane, Tape, & Flashing Details",4,TPO 60MIL [10ft] (White),per linear ft,Membrane Roll
+INV0000016,"TPO Membrane, Tape, & Flashing Details",5,TPO 60MIL [10ft] (Grey),per linear ft,Membrane Roll
+INV0000018,"TPO Membrane, Tape, & Flashing Details",6,TPO 60MIL [10ft] (Tan),per linear ft,Membrane Roll
+INV0017503,"TPO Membrane, Tape, & Flashing Details",7,TPO 60MIL [10ft] (Car),per linear ft,Membrane Roll
+INV0000035,"TPO Membrane, Tape, & Flashing Details",8,TPO 60MIL Detail (White),per linear ft,Membrane Roll
+INV0000036,"TPO Membrane, Tape, & Flashing Details",9,TPO 60MIL Detail (Grey),per linear ft,Membrane Roll
+INV0000037,"TPO Membrane, Tape, & Flashing Details",10,TPO 60MIL Detail (Tan),per linear ft,Membrane Roll
+INV0017025,"TPO Membrane, Tape, & Flashing Details",11,"TPO SecurTape [3""]",per linear ft,Roll
+INV0017019,"TPO Membrane, Tape, & Flashing Details",12,"TPO Cover Strip [9""]",per linear ft,Roll Tape
+INV0017018,"TPO Membrane, Tape, & Flashing Details",13,"TPO Cover Strip [6""]",per linear ft,Roll Tape
+INV0000058,"TPO Membrane, Tape, & Flashing Details",14,TPO T-Joint Patch,each,Adhesive Tape
+INV0017014,"TPO Membrane, Tape, & Flashing Details",15,"TPO P&S Flashing Uncured [9""]",per linear ft,P&S Uncured Roll
+INV0017013,"TPO Membrane, Tape, & Flashing Details",16,"TPO P&S Flashing Uncured [12""]",per linear ft,P&S Uncured Roll
+INV0016955,"TPO Membrane, Tape, & Flashing Details",17,TPO Sure-Weld NR Flashing,per linear ft,Sure-Weld NR Nonrein Roll
+INV0017017,"TPO Membrane, Tape, & Flashing Details",18,TPO Walkway (CAR),per linear ft,Roll Safety Pad
+INV0000039,"TPO Membrane, Tape, & Flashing Details",19,TPO Walkway (JM),per linear ft,Roll Safety Pad
