@@ -1,9 +1,6 @@
 const { App } = require('@slack/bolt');
 const { materialCategories, getHumanLabel } = require('./materials');
 
-// Flatten all materials into one big list for the MVP
-const allMaterials = materialCategories.flatMap(cat => cat.items).slice(0, 50); // Limit to 50 for now
-
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
@@ -11,21 +8,16 @@ const app = new App({
   appToken: process.env.SLACK_APP_TOKEN
 });
 
-// Helper: Build Block Kit options for the select menu
-function materialOptions() {
-  return allMaterials.map(mat => ({
-    text: {
-      type: "plain_text",
-      text: mat.label,
-      emoji: true
-    },
-    value: mat.id
-  }));
-}
-
 // Helper: Get material info by id
 function getMaterialById(id) {
-  return allMaterials.find(mat => mat.id === id);
+  for (const category of materialCategories) {
+    for (const material of category.items) {
+      if (material.id === id) {
+        return material;
+      }
+    }
+  }
+  return null;
 }
 
 // Helper: Format materials with filled circles and proper spacing
@@ -35,7 +27,7 @@ function formatMaterialsList(materials) {
   
   materials.forEach((mat, index) => {
     const numberEmoji = numberEmojis[index % numberEmojis.length];
-    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} ${getHumanLabel(mat.unit)}\n\n`;
+    materialText += `${numberEmoji}   *${mat.label}* — ${mat.qty} per ${getHumanLabel(mat.unit)}\n\n`;
   });
   
   return materialText;
@@ -88,10 +80,78 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// -------- STEP 2: Materials Selection Modal --------
+// -------- STEP 2: Materials Selection Modal (with categories) --------
 app.view('job_channel_select', async ({ ack, body, view }) => {
   // Get the selected job channel
   const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
+
+  // Create blocks for each category
+  const blocks = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `Selected job: <#${jobChannelId}>`
+      }
+    },
+    {
+      type: "context",
+      elements: [
+        {
+          type: "mrkdwn",
+          text: "Select materials from each category as needed."
+        }
+      ]
+    }
+  ];
+
+  // Add each category as a separate multi-select
+  materialCategories.forEach((category, index) => {
+    // Add a divider between categories
+    if (index > 0) {
+      blocks.push({
+        type: "divider"
+      });
+    }
+
+    // Add category header
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*${category.name}*`
+      }
+    });
+
+    // Add multi-select for this category
+    blocks.push({
+      type: "input",
+      block_id: `category_${index}`,
+      optional: true,
+      label: {
+        type: "plain_text",
+        text: "Select materials",
+        emoji: true
+      },
+      element: {
+        type: "multi_static_select",
+        action_id: `materials_${index}`,
+        placeholder: {
+          type: "plain_text",
+          text: "Choose materials",
+          emoji: true
+        },
+        options: category.items.map(item => ({
+          text: {
+            type: "plain_text",
+            text: item.label,
+            emoji: true
+          },
+          value: item.id
+        }))
+      }
+    });
+  });
 
   // Open materials selection modal
   await ack({
@@ -103,26 +163,7 @@ app.view('job_channel_select', async ({ ack, body, view }) => {
       title: { type: "plain_text", text: "Materials Used" },
       submit: { type: "plain_text", text: "Next" },
       close: { type: "plain_text", text: "Cancel" },
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `Selected job: <#${jobChannelId}>`
-          }
-        },
-        {
-          type: "input",
-          block_id: "materials_select",
-          label: { type: "plain_text", text: "Select materials used" },
-          element: {
-            type: "multi_static_select",
-            action_id: "selected_materials",
-            placeholder: { type: "plain_text", text: "Choose materials" },
-            options: materialOptions()
-          }
-        }
-      ]
+      blocks: blocks
     }
   });
 });
@@ -133,33 +174,54 @@ app.view('materials_select_modal', async ({ ack, body, view }) => {
   const metadata = JSON.parse(view.private_metadata || '{}');
   const jobChannelId = metadata.jobChannelId;
   
-  // Get selected material IDs
-  const selected = view.state.values.materials_select.selected_materials.selected_options || [];
-  const selectedIds = selected.map(opt => opt.value);
+  // Get selected material IDs from all categories
+  const selectedMaterials = [];
+  
+  materialCategories.forEach((category, index) => {
+    const categoryBlock = view.state.values[`category_${index}`];
+    
+    if (categoryBlock && categoryBlock[`materials_${index}`] && 
+        categoryBlock[`materials_${index}`].selected_options) {
+      categoryBlock[`materials_${index}`].selected_options.forEach(option => {
+        selectedMaterials.push(option.value);
+      });
+    }
+  });
 
-  if (selectedIds.length === 0) {
-    // You could return errors here if you wanted to validate selection
-    await ack();
+  if (selectedMaterials.length === 0) {
+    // Return error if no materials selected
+    await ack({
+      response_action: "errors",
+      errors: {
+        "category_0": "Please select at least one material"
+      }
+    });
     return;
   }
 
   // Build quantity entry blocks (one input per material)
-  const quantityBlocks = selectedIds.map(id => {
+  const quantityBlocks = selectedMaterials.map(id => {
     const mat = getMaterialById(id);
+    if (!mat) return null;
+    
     return {
       type: "input",
       block_id: `qty_${id}`,
       label: {
         type: "plain_text",
-        text: `${mat.label} (${getHumanLabel(mat.unit)})`
+        text: `${mat.label} (per ${getHumanLabel(mat.unit)})`, // Changed to "per [unit]"
+        emoji: true
       },
       element: {
         type: "plain_text_input",
         action_id: "quantity_input",
-        placeholder: { type: "plain_text", text: "Quantity (whole number)" }
+        placeholder: {
+          type: "plain_text",
+          text: "Enter amount"
+        }
       }
     };
-  });
+  }).filter(block => block !== null);
 
   // Use response_action to update the view immediately
   await ack({
@@ -168,7 +230,7 @@ app.view('materials_select_modal', async ({ ack, body, view }) => {
       type: "modal",
       callback_id: "quantity_entry_modal",
       private_metadata: JSON.stringify({ 
-        selectedIds, 
+        selectedIds: selectedMaterials, 
         jobChannelId, 
         user: body.user.id 
       }),
@@ -203,6 +265,8 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
   let errorBlocks = {};
   const materialsWithQty = selectedIds.map(id => {
     const mat = getMaterialById(id);
+    if (!mat) return null;
+    
     const qtyBlock = values[`qty_${id}`];
     const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
     const qty = parseInt(qtyRaw, 10);
@@ -218,7 +282,7 @@ app.view('quantity_entry_modal', async ({ ack, view }) => {
       unit: mat.unit,
       qty: qtyRaw
     };
-  });
+  }).filter(mat => mat !== null);
 
   if (hasError) {
     await ack({
@@ -322,7 +386,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         elements: [
           {
             type: "mrkdwn",
-            text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>` // Added job channel to context
+            text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>`
           }
         ]
       },
