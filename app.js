@@ -205,8 +205,9 @@ app.command('/service', async ({ ack, body, client }) => {
                   emoji: true
                 },
                 action_id: "job_channel_selected",
-                include: ["public", "private"],
-                exclude_bot_users: true
+                  filter: {
+                  include: ["public", "private"], 
+                  exclude_bot_users: true         
               },
               label: {
                 type: "plain_text",
