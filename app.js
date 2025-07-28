@@ -344,7 +344,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
   }
 });
 
-// STEP 3: Materials Selection Modal Handler - FIXED
+// STEP 3: Materials Selection Modal Handler - FIXED (Only ack with update, never just ack!)
 app.view('materials_select_modal', async ({ ack, body, view, client }) => {
   try {
     // LOG raw modal values for debugging
