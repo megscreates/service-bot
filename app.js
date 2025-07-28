@@ -460,6 +460,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
 
 // Start the app
 (async () => {
+  // Start the app
   await app.start(process.env.PORT || 3000);
-  console.log('⚡️ Service Bot is running!');
+  console.log('⚡️ Service Bot is running on port', process.env.PORT || 3000);
 })();
