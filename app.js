@@ -3,9 +3,8 @@ const { materialCategories, getPluralLabel, getSingularLabel, getQuantityLabel }
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: !!process.env.SLACK_APP_TOKEN, // Render might use http instead
-  appToken: process.env.SLACK_APP_TOKEN
+  appToken: process.env.SLACK_APP_TOKEN,
+  socketMode: true  // Only use Socket Mode
 });
 
 // Add detailed error handling
