@@ -35,6 +35,23 @@ function formatMaterialsList(materials) {
   return materialText;
 }
 
+// Add this near the top of your file, after initializing the app
+app.error(async (error) => {
+  console.error('Slack app error:', error);
+});
+
+// For your view submission handlers, wrap them with try/catch:
+app.view('create_service_modal', async ({ ack, body, view, client }) => {
+  try {
+    // Your existing code here
+    await ack();
+    // Rest of the function...
+  } catch (error) {
+    console.error('Error in create_service_modal handler:', error);
+    await ack(); // Still acknowledge to prevent timeout
+  }
+});
+
 // -------- STEP 1: Job Channel Selection --------
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
