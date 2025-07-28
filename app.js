@@ -335,9 +335,11 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     // Build material/quantity list and validate
     let hasError = false;
     const errorBlocks = {};
-    const materialsWithQty = selectedIds.map(id => {
+    const materialsWithQty = [];
+    
+    for (const id of selectedIds) {
       const mat = getMaterialById(id);
-      if (!mat) return null;
+      if (!mat) continue;
       
       const qtyBlock = values[`qty_${id}`];
       const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
@@ -346,15 +348,15 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
       if (isNaN(qty) || qty < 1 || !/^\d+$/.test(qtyRaw)) {
         hasError = true;
         errorBlocks[`qty_${id}`] = "Enter a positive whole number (1+)";
+      } else {
+        materialsWithQty.push({
+          id,
+          label: mat.label,
+          unit: mat.unit,
+          qty: qtyRaw
+        });
       }
-
-      return {
-        id,
-        label: mat.label,
-        unit: mat.unit,
-        qty: qtyRaw
-      };
-    }).filter(mat => mat !== null);
+    }
 
     if (hasError) {
       // Return validation errors
@@ -370,12 +372,16 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10);
     
-    // Format the materials with filled circles and proper spacing
-    const formattedMaterials = formatMaterialsList(materialsWithQty);
+    // SIMPLIFY: Just create a basic review view first
+    console.log('Creating simplified review view');
     
-    console.log('Updating view for review');
-
-    // KEY CHANGE: Update the current view instead of opening a new one
+    // Create a simplified version of the materials list text
+    let materialsText = "";
+    materialsWithQty.forEach(mat => {
+      materialsText += `• ${mat.label}: ${mat.qty}\n`;
+    });
+    
+    // Update the current view with a simpler version first
     await ack({
       response_action: "update",
       view: {
@@ -395,44 +401,32 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "*Materials List*"
+              text: `*Job Channel:* <#${jobChannelId}>`
             }
-          },
-          {
-            type: "context",
-            elements: [
-              {
-                type: "mrkdwn",
-                text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>`
-              }
-            ]
-          },
-          {
-            type: "divider"
           },
           {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: formattedMaterials
+              text: "*Materials List:*\n" + materialsText
             }
           }
         ]
       }
     });
     
-    console.log('Review modal opened via view update');
+    console.log('Review modal opened via simple view update');
   } catch (error) {
     console.error('Error updating to review modal:', error);
     
-    // Acknowledge with basic response to prevent timeouts
+    // Basic acknowledgment to prevent timeout
     await ack();
     
     // Try to notify the user
     try {
       await client.chat.postMessage({
         channel: body.user.id,
-        text: `Sorry, something went wrong when processing quantities. Please try again!`
+        text: `Sorry, something went wrong with the review. Error: ${error.message}`
       });
     } catch (notifyError) {
       console.error('Error sending notification:', notifyError);
