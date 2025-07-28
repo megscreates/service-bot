@@ -59,18 +59,27 @@ function formatMaterialsList(materials) {
   return materialText;
 }
 
-// -------- STEP 1: Job Channel Selection --------
+// STEP 1: Job Channel + Category Selection
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
   console.log('Materials command triggered by user:', body.user_id);
 
   try {
-    console.log('Opening job channel selection modal');
+    // Create category options for multi-select
+    const categoryOptions = materialCategories.map((category, index) => ({
+      text: {
+        type: "plain_text",
+        text: category.name,
+        emoji: true
+      },
+      value: `${index}`
+    }));
+
     await client.views.open({
       trigger_id: body.trigger_id,
       view: {
         type: "modal",
-        callback_id: "job_channel_select",
+        callback_id: "job_and_category_select",
         title: { type: "plain_text", text: "Materials Used" },
         submit: { type: "plain_text", text: "Next" },
         close: { type: "plain_text", text: "Cancel" },
@@ -79,7 +88,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "First, select the job channel where these materials were used:"
+              text: "Select a job channel and which material categories you need:"
             }
           },
           {
@@ -99,14 +108,32 @@ app.command('/materials', async ({ ack, body, client }) => {
               text: "Job Channel",
               emoji: true
             }
+          },
+          {
+            type: "input",
+            block_id: "categories",
+            element: {
+              type: "multi_static_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Choose categories",
+                emoji: true
+              },
+              options: categoryOptions,
+              action_id: "categories_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Material Categories",
+              emoji: true
+            }
           }
         ]
       }
     });
   } catch (err) {
-    console.error('Error opening job channel selection modal:', err);
-    
-    // Try to notify the user about the error
+    console.error('Error opening selection modal:', err);
+    // Error handling as before
     try {
       await client.chat.postMessage({
         channel: body.user_id,
@@ -118,17 +145,19 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// -------- STEP 2: Materials Selection Modal (with categories) --------
-app.view('job_channel_select', async ({ ack, body, view, client }) => {
+// STEP 2: Show materials from ONLY selected categories
+app.view('job_and_category_select', async ({ ack, body, view, client }) => {
   try {
-    console.log('Processing channel selection from user:', body.user.id);
-    
     // Get the selected job channel
     const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
-    console.log('Selected job channel:', jobChannelId);
+    
+    // Get selected categories
+    const selectedCategoryIndexes = view.state.values.categories.categories_selected.selected_options.map(opt => 
+      parseInt(opt.value, 10)
+    );
     
     if (!jobChannelId) {
-      // Missing channel selection - shouldn't happen but just in case
+      // Error handling for missing job channel
       await ack({
         response_action: "errors",
         errors: {
@@ -138,7 +167,18 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
       return;
     }
     
-    // Create blocks for each category
+    if (selectedCategoryIndexes.length === 0) {
+      // Error handling for no categories selected
+      await ack({
+        response_action: "errors",
+        errors: {
+          "categories": "Please select at least one category"
+        }
+      });
+      return;
+    }
+
+    // Create blocks for the selected categories only
     const blocks = [
       {
         type: "section",
@@ -152,14 +192,16 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
         elements: [
           {
             type: "mrkdwn",
-            text: "Select materials from each category as needed."
+            text: "Select materials from each category:"
           }
         ]
       }
     ];
 
-    // Add each category as a separate multi-select
-    materialCategories.forEach((category, index) => {
+    // Add ONLY the selected categories as separate multi-select inputs
+    selectedCategoryIndexes.forEach((categoryIndex, index) => {
+      const category = materialCategories[categoryIndex];
+      
       // Add a divider between categories
       if (index > 0) {
         blocks.push({
@@ -179,7 +221,7 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
       // Add multi-select for this category
       blocks.push({
         type: "input",
-        block_id: `category_${index}`,
+        block_id: `category_${categoryIndex}`, // Use actual category index for consistency
         optional: true,
         label: {
           type: "plain_text",
@@ -188,7 +230,7 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
         },
         element: {
           type: "multi_static_select",
-          action_id: `materials_${index}`,
+          action_id: `materials_${categoryIndex}`,
           placeholder: {
             type: "plain_text",
             text: "Choose materials",
@@ -206,41 +248,34 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
       });
     });
 
-    // Use view update pattern here too for reliability
+    // Update view with only the selected categories
     await ack({
       response_action: "update",
       view: {
         type: "modal",
         callback_id: "materials_select_modal",
-        private_metadata: JSON.stringify({ jobChannelId }),
-        title: { type: "plain_text", text: "Materials Used" },
+        private_metadata: JSON.stringify({ 
+          jobChannelId, 
+          selectedCategoryIndexes // Store for later reference
+        }),
+        title: { type: "plain_text", text: "Select Materials" },
         submit: { type: "plain_text", text: "Next" },
         close: { type: "plain_text", text: "Cancel" },
         blocks: blocks
       }
     });
     
-    console.log('Materials selection modal opened via view update');
+    console.log('Materials selection modal opened with selected categories only');
   } catch (error) {
     console.error('Error updating to materials selection modal:', error);
     
-    // Acknowledge with basic response to prevent timeouts
+    // Error handling as before
     await ack({
       response_action: "errors",
       errors: {
         "job_channel": "Something went wrong. Please try again."
       }
     });
-    
-    // Try to notify the user
-    try {
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: `Sorry, something went wrong when showing materials. Please try again!`
-      });
-    } catch (dmError) {
-      console.error('Error sending error notification:', dmError);
-    }
   }
 });
 
