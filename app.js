@@ -14,6 +14,21 @@ const app = new App({
   }
 });
 
+// error handler
+app.error(async (error) => {
+  console.error('SLACK APP ERROR:', error);
+  
+  // Specific handling for rate limit errors
+  if (error.code === 'slack_webapi_rate_limited') {
+    console.log('⚠️ Rate limited by Slack API - waiting before retry');
+    // Wait for the retry_after period if specified
+    if (error.retry_after) {
+      await new Promise(resolve => setTimeout(resolve, error.retry_after * 1000));
+    }
+  }
+});
+
+
 // Error logging
 app.error(async (error) => {
   console.error('SLACK APP ERROR:', error);
