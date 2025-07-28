@@ -469,11 +469,10 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
         }
       });
 
-      // Add multi-select for this category with the category name as label
+      // Add multi-select for this category - KEEP THE LABEL FIELD!
       blocks.push({
         type: "input",
-        block_id: `category_${categoryIndex}`, // Use actual category index for consistency
-        // Removed label to avoid duplication with the header above
+        block_id: `category_${categoryIndex}`,
         element: {
           type: "multi_static_select",
           action_id: `materials_${categoryIndex}`,
@@ -490,6 +489,12 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
             },
             value: item.id
           }))
+        },
+        // Must include this label field even if redundant
+        label: {
+          type: "plain_text",
+          text: "Materials",
+          emoji: true
         }
       });
     });
