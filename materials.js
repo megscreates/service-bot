@@ -5,7 +5,7 @@ const materialCategories = [
     items: [
       { id: "INV0017225", label: "Rags", unit: "each" },
       { id: "INV0017337", label: "Garbage Bags", unit: "each" },
-      { id: "INV0017226", label: "Gloves", unit: "pair" },
+      { id: "INV0017226", label: "Gloves", unit: "each" },
       { id: "INV0017228", label: "Chip Brush", unit: "each" },
       { id: "INV0017414", label: "Masking Tape", unit: "each" },
       { id: "INV0000612", label: "409 Cleaner", unit: "gal" },
@@ -297,7 +297,6 @@ function getPluralLabel(unit) {
     "roll": "rolls",
     "box": "boxes",
     "tube": "tubes"
-    "pair": "pairs"
   };
   return labels[unit] || unit;
 }
@@ -315,7 +314,6 @@ function getSingularLabel(unit) {
     "roll": "roll",
     "box": "box",
     "tube": "tube",
-    "pair": "pair"
   };
   return labels[unit] || unit;
 }
