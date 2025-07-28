@@ -1261,9 +1261,6 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       text: `EOD Service Summary for ${channelName} submitted by <@${userId}>`,
       blocks: [
         {
-          type: "divider"
-        },
-        {
           type: "image",
           image_url: "https://github.com/megscreates/service-bot/blob/main/rra%20service%20summary%20banner.png?raw=true",
           alt_text: "EOD Service Summary"
