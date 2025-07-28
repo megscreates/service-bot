@@ -320,10 +320,6 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
 
 // -------- STEP 4: Review Modal --------
 app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
-  // KEY FIX: Acknowledge immediately before doing anything else!
-  await ack();
-  console.log('Quantity entry acknowledged successfully');
-  
   try {
     console.log('Processing quantities from user:', body.user.id);
     
@@ -338,6 +334,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
 
     // Build material/quantity list and validate
     let hasError = false;
+    const errorBlocks = {};
     const materialsWithQty = selectedIds.map(id => {
       const mat = getMaterialById(id);
       if (!mat) return null;
@@ -348,6 +345,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
 
       if (isNaN(qty) || qty < 1 || !/^\d+$/.test(qtyRaw)) {
         hasError = true;
+        errorBlocks[`qty_${id}`] = "Enter a positive whole number (1+)";
       }
 
       return {
@@ -359,10 +357,11 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     }).filter(mat => mat !== null);
 
     if (hasError) {
+      // Return validation errors
       console.log('Validation errors in quantities');
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: "Please make sure all quantities are positive whole numbers (1+) and try again."
+      await ack({
+        response_action: "errors",
+        errors: errorBlocks
       });
       return;
     }
@@ -374,11 +373,11 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     // Format the materials with filled circles and proper spacing
     const formattedMaterials = formatMaterialsList(materialsWithQty);
     
-    console.log('Opening review modal');
-    
-    // Open review modal as a new modal
-    await client.views.open({
-      trigger_id: body.trigger_id,
+    console.log('Updating view for review');
+
+    // KEY CHANGE: Update the current view instead of opening a new one
+    await ack({
+      response_action: "update",
       view: {
         type: "modal",
         callback_id: "review_modal",
@@ -422,9 +421,12 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
       }
     });
     
-    console.log('Review modal opened successfully');
+    console.log('Review modal opened via view update');
   } catch (error) {
-    console.error('Error opening review modal:', error);
+    console.error('Error updating to review modal:', error);
+    
+    // Acknowledge with basic response to prevent timeouts
+    await ack();
     
     // Try to notify the user
     try {
