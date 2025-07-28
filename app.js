@@ -7,14 +7,19 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   socketMode: !!process.env.SLACK_APP_TOKEN,
   appToken: process.env.SLACK_APP_TOKEN,
-  // Add these for more reliable socket connections:
-  socketMode: {
-    reconnectOnError: true,
-    reconnect: true
-  }
+  customRoutes: [
+    {
+      path: '/',
+      method: ['GET'],
+      handler: (req, res) => {
+        res.writeHead(200);
+        res.end('Service Bot is running!');
+      },
+    }
+  ]
 });
 
-// error handler
+// Single consolidated error handler
 app.error(async (error) => {
   console.error('SLACK APP ERROR:', error);
   
@@ -27,13 +32,6 @@ app.error(async (error) => {
     }
   }
 });
-
-
-// Error logging
-app.error(async (error) => {
-  console.error('SLACK APP ERROR:', error);
-});
-
 // Helper: Get material info by id
 function getMaterialById(id) {
   for (const category of materialCategories) {
