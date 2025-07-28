@@ -471,7 +471,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
       await ack({
         response_action: "errors",
         errors: {
-          "qty_" + selectedIds[0]: "Please enter at least one valid quantity"
+          [`qty_${selectedIds[0]}`]: "Please enter at least one valid quantity"
         }
       });
       return;
