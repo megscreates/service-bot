@@ -127,256 +127,277 @@ function generateAcumaticaImportCSV(data) {
 }
 
 // STEP 1: Job Channel + Category Selection + Job Details
+app.command('/service', async ({ ack, body, client }) => {
+  await ack();
+  
+  // Check if the subcommand is "checkout"
+  if (body.text.trim().toLowerCase() === "checkout") {
+    console.log('Service checkout command triggered by user:', body.user_id);
+
+    try {
+      // Get today's date in YYYY-MM-DD format for default
+      const today = new Date();
+      const dateStr = today.toISOString().slice(0, 10);
+
+      // Create category options for multi-select
+      const categoryOptions = materialCategories.map((category, index) => ({
+        text: {
+          type: "plain_text",
+          text: category.name,
+          emoji: true
+        },
+        value: `${index}`
+      }));
+      
+      // Find indexes of categories to auto-select
+      const everydayBasicsIndex = getCategoryIndexByName("Everyday Basics");
+      const adhesivesIndex = getCategoryIndexByName("Adhesives, Sealants, & Coatings");
+      
+      // Create initial selection options
+      const initialCategories = [];
+      
+      if (everydayBasicsIndex !== -1) {
+        initialCategories.push({
+          text: {
+            type: "plain_text",
+            text: "Everyday Basics",
+            emoji: true
+          },
+          value: `${everydayBasicsIndex}`
+        });
+      }
+      
+      if (adhesivesIndex !== -1) {
+        initialCategories.push({
+          text: {
+            type: "plain_text",
+            text: "Adhesives, Sealants, & Coatings",
+            emoji: true
+          },
+          value: `${adhesivesIndex}`
+        });
+      }
+
+      await client.views.open({
+        trigger_id: body.trigger_id,
+        view: {
+          type: "modal",
+          callback_id: "job_and_category_select",
+          title: { type: "plain_text", text: "Materials Used" },
+          submit: { type: "plain_text", text: "Next" },
+          close: { type: "plain_text", text: "Cancel" },
+          blocks: [
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: "Select a job channel and enter job details:"
+              }
+            },
+            {
+              type: "input",
+              block_id: "job_channel",
+              element: {
+                type: "channels_select",
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select a job channel",
+                  emoji: true
+                },
+                action_id: "job_channel_selected"
+              },
+              label: {
+                type: "plain_text",
+                text: "Job Channel",
+                emoji: true
+              }
+            },
+            {
+              type: "input",
+              block_id: "service_date",
+              element: {
+                type: "datepicker",
+                initial_date: dateStr,
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select date",
+                  emoji: true
+                },
+                action_id: "service_date_selected"
+              },
+              label: {
+                type: "plain_text",
+                text: "Service Date",
+                emoji: true
+              }
+            },
+            {
+              type: "input",
+              block_id: "service_truck",
+              element: {
+                type: "static_select",
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select service truck",
+                  emoji: true
+                },
+                options: [
+                  {
+                    text: {
+                      type: "plain_text",
+                      text: "Service Truck 63",
+                      emoji: true
+                    },
+                    value: "TRUCK0063"
+                  },
+                  {
+                    text: {
+                      type: "plain_text",
+                      text: "Service Truck 64",
+                      emoji: true
+                    },
+                    value: "TRUCK0064"
+                  },
+                  {
+                    text: {
+                      type: "plain_text",
+                      text: "Service Truck 74",
+                      emoji: true
+                    },
+                    value: "TRUCK0074"
+                  },
+                  {
+                    text: {
+                      type: "plain_text",
+                      text: "Service Truck 85",
+                      emoji: true
+                    },
+                    value: "TRUCK0085"
+                  },
+                  {
+                    text: {
+                      type: "plain_text",
+                      text: "Service Truck 91",
+                      emoji: true
+                    },
+                    value: "TRUCK0091"
+                  }
+                ],
+                action_id: "service_truck_selected"
+              },
+              label: {
+                type: "plain_text",
+                text: "Service Truck",
+                emoji: true
+              }
+            },
+            {
+              type: "input",
+              block_id: "technicians",
+              element: {
+                type: "multi_users_select",
+                initial_users: [body.user_id], // Auto-include the submitter
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select technicians",
+                  emoji: true
+                },
+                action_id: "technicians_selected"
+              },
+              label: {
+                type: "plain_text",
+                text: "Technicians",
+                emoji: true
+              }
+            },
+            {
+              type: "input",
+              block_id: "drive_hours",
+              element: {
+                type: "plain_text_input",
+                action_id: "drive_hours_input",
+                placeholder: {
+                  type: "plain_text",
+                  text: "e.g. 2.5",
+                  emoji: true
+                }
+              },
+              label: {
+                type: "plain_text",
+                text: "Drive Hours (per tech)",
+                emoji: true
+              }
+            },
+            {
+              type: "input",
+              block_id: "labor_hours",
+              element: {
+                type: "plain_text_input",
+                action_id: "labor_hours_input",
+                placeholder: {
+                  type: "plain_text",
+                  text: "e.g. 4.5",
+                  emoji: true
+                }
+              },
+              label: {
+                type: "plain_text",
+                text: "Labor Hours (per tech)",
+                emoji: true
+              }
+            },
+            {
+              type: "input",
+              block_id: "categories",
+              element: {
+                type: "multi_static_select",
+                placeholder: {
+                  type: "plain_text",
+                  text: "Choose categories",
+                  emoji: true
+                },
+                initial_options: initialCategories,
+                options: categoryOptions,
+                action_id: "categories_selected"
+              },
+              label: {
+                type: "plain_text",
+                text: "Material Categories",
+                emoji: true
+              }
+            }
+          ]
+        }
+      });
+    } catch (err) {
+      console.error('Error opening selection modal:', err);
+      try {
+        await client.chat.postMessage({
+          channel: body.user_id,
+          text: `Sorry, something went wrong. Please try again!`
+        });
+      } catch (dmError) {
+        console.error('Error sending error notification:', dmError);
+      }
+    }
+  } else {
+    // Handle when someone just types "/service" with no subcommand or wrong subcommand
+    await client.chat.postEphemeral({
+      channel: body.channel_id,
+      user: body.user_id,
+      text: "Try `/service checkout` to log materials used on a job."
+    });
+  }
+});
+
+// Keep the old command as a backup during transition
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
-  console.log('Materials command triggered by user:', body.user_id);
-
-  try {
-    // Get today's date in YYYY-MM-DD format for default
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10);
-
-    // Create category options for multi-select
-    const categoryOptions = materialCategories.map((category, index) => ({
-      text: {
-        type: "plain_text",
-        text: category.name,
-        emoji: true
-      },
-      value: `${index}`
-    }));
-    
-    // Find indexes of categories to auto-select
-    const everydayBasicsIndex = getCategoryIndexByName("Everyday Basics");
-    const adhesivesIndex = getCategoryIndexByName("Adhesives, Sealants, & Coatings");
-    
-    // Create initial selection options
-    const initialCategories = [];
-    
-    if (everydayBasicsIndex !== -1) {
-      initialCategories.push({
-        text: {
-          type: "plain_text",
-          text: "Everyday Basics",
-          emoji: true
-        },
-        value: `${everydayBasicsIndex}`
-      });
-    }
-    
-    if (adhesivesIndex !== -1) {
-      initialCategories.push({
-        text: {
-          type: "plain_text",
-          text: "Adhesives, Sealants, & Coatings",
-          emoji: true
-        },
-        value: `${adhesivesIndex}`
-      });
-    }
-
-    await client.views.open({
-      trigger_id: body.trigger_id,
-      view: {
-        type: "modal",
-        callback_id: "job_and_category_select",
-        title: { type: "plain_text", text: "Materials Used" },
-        submit: { type: "plain_text", text: "Next" },
-        close: { type: "plain_text", text: "Cancel" },
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "Select a job channel and enter job details:"
-            }
-          },
-          {
-            type: "input",
-            block_id: "job_channel",
-            element: {
-              type: "channels_select",
-              placeholder: {
-                type: "plain_text",
-                text: "Select a job channel",
-                emoji: true
-              },
-              action_id: "job_channel_selected"
-            },
-            label: {
-              type: "plain_text",
-              text: "Job Channel",
-              emoji: true
-            }
-          },
-          {
-            type: "input",
-            block_id: "service_date",
-            element: {
-              type: "datepicker",
-              initial_date: dateStr,
-              placeholder: {
-                type: "plain_text",
-                text: "Select date",
-                emoji: true
-              },
-              action_id: "service_date_selected"
-            },
-            label: {
-              type: "plain_text",
-              text: "Service Date",
-              emoji: true
-            }
-          },
-          {
-            type: "input",
-            block_id: "service_truck",
-            element: {
-              type: "static_select",
-              placeholder: {
-                type: "plain_text",
-                text: "Select service truck",
-                emoji: true
-              },
-              options: [
-                {
-                  text: {
-                    type: "plain_text",
-                    text: "Service Truck 63",
-                    emoji: true
-                  },
-                  value: "TRUCK0063"
-                },
-                {
-                  text: {
-                    type: "plain_text",
-                    text: "Service Truck 64",
-                    emoji: true
-                  },
-                  value: "TRUCK0064"
-                },
-                {
-                  text: {
-                    type: "plain_text",
-                    text: "Service Truck 74",
-                    emoji: true
-                  },
-                  value: "TRUCK0074"
-                },
-                {
-                  text: {
-                    type: "plain_text",
-                    text: "Service Truck 85",
-                    emoji: true
-                  },
-                  value: "TRUCK0085"
-                },
-                {
-                  text: {
-                    type: "plain_text",
-                    text: "Service Truck 91",
-                    emoji: true
-                  },
-                  value: "TRUCK0091"
-                }
-              ],
-              action_id: "service_truck_selected"
-            },
-            label: {
-              type: "plain_text",
-              text: "Service Truck",
-              emoji: true
-            }
-          },
-          {
-            type: "input",
-            block_id: "technicians",
-            element: {
-              type: "multi_users_select",
-              initial_users: [body.user_id], // Auto-include the submitter
-              placeholder: {
-                type: "plain_text",
-                text: "Select technicians",
-                emoji: true
-              },
-              action_id: "technicians_selected"
-            },
-            label: {
-              type: "plain_text",
-              text: "Technicians",
-              emoji: true
-            }
-          },
-          {
-            type: "input",
-            block_id: "drive_hours",
-            element: {
-              type: "plain_text_input",
-              action_id: "drive_hours_input",
-              placeholder: {
-                type: "plain_text",
-                text: "e.g. 2.5",
-                emoji: true
-              }
-            },
-            label: {
-              type: "plain_text",
-              text: "Drive Hours (per tech)",
-              emoji: true
-            }
-          },
-          {
-            type: "input",
-            block_id: "labor_hours",
-            element: {
-              type: "plain_text_input",
-              action_id: "labor_hours_input",
-              placeholder: {
-                type: "plain_text",
-                text: "e.g. 4.5",
-                emoji: true
-              }
-            },
-            label: {
-              type: "plain_text",
-              text: "Labor Hours (per tech)",
-              emoji: true
-            }
-          },
-          {
-            type: "input",
-            block_id: "categories",
-            element: {
-              type: "multi_static_select",
-              placeholder: {
-                type: "plain_text",
-                text: "Choose categories",
-                emoji: true
-              },
-              initial_options: initialCategories,
-              options: categoryOptions,
-              action_id: "categories_selected"
-            },
-            label: {
-              type: "plain_text",
-              text: "Material Categories",
-              emoji: true
-            }
-          }
-        ]
-      }
-    });
-  } catch (err) {
-    console.error('Error opening selection modal:', err);
-    try {
-      await client.chat.postMessage({
-        channel: body.user_id,
-        text: `Sorry, something went wrong. Please try again!`
-      });
-    } catch (dmError) {
-      console.error('Error sending error notification:', dmError);
-    }
-  }
+  await client.chat.postEphemeral({
+    channel: body.channel_id,
+    user: body.user_id,
+    text: "We've moved to a new command! Please use `/service checkout` instead."
+  });
 });
 
 // STEP 2: Show materials from ONLY selected categories - FIXED VERSION
