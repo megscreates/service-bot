@@ -32,6 +32,7 @@ app.error(async (error) => {
     }
   }
 });
+
 // Helper: Get material info by id
 function getMaterialById(id) {
   for (const category of materialCategories) {
@@ -283,11 +284,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
 // -------- STEP 3: Quantity Entry Modal --------
 app.view('materials_select_modal', async ({ ack, body, view, client }) => {
   try {
-    console.log('Starting materials selection processing');
-    
-    // IMPORTANT: Acknowledge request IMMEDIATELY to prevent timeout
-    await ack();
-    console.log('Request acknowledged immediately');
+    console.log('Processing materials selection from user:', body.user.id);
     
     // Get previous metadata
     const metadata = JSON.parse(view.private_metadata || '{}');
@@ -311,20 +308,24 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     console.log(`Selected ${selectedMaterials.length} materials`);
 
     if (selectedMaterials.length === 0) {
-      // No materials selected - notify user instead of error
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: `Please select at least one material and try again.`
+      // No materials selected - error
+      await ack({
+        response_action: "errors",
+        errors: {
+          "category_0": "Please select at least one material"
+        }
       });
       return;
     }
     
     // Add check for maximum items - keeping to 20 for now
     if (selectedMaterials.length > 20) {
-      // Too many materials - notify user
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: `Please select no more than 20 materials and try again.`
+      // Too many materials - error
+      await ack({
+        response_action: "errors",
+        errors: {
+          "category_0": "Please select no more than 20 materials"
+        }
       });
       return;
     }
@@ -350,52 +351,54 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
             type: "plain_text",
             text: "Enter amount"
           }
-          // NO subtype property here!
+          // No subtype property here - that's what was causing the error!
         }
       };
     }).filter(block => block !== null);
     
-    // Update the view separately now that we already acknowledged
+    // KEY CHANGE: Update view directly in the acknowledgment
+    await ack({
+      response_action: "update",
+      view: {
+        type: "modal",
+        callback_id: "quantity_entry_modal",
+        private_metadata: JSON.stringify({ 
+          selectedIds: selectedMaterials, 
+          jobChannelId, 
+          user: body.user.id 
+        }),
+        title: { type: "plain_text", text: "Enter Quantities" },
+        submit: { type: "plain_text", text: "Review" },
+        close: { type: "plain_text", text: "Cancel" },
+        blocks: [
+          {
+            type: "section",
+            text: { 
+              type: "mrkdwn", 
+              text: `*Job:* <#${jobChannelId}>\n\n*Enter the quantity used for each material:*` 
+            }
+          },
+          ...quantityBlocks
+        ]
+      }
+    });
+    
+    console.log('Quantity entry modal opened via view update');
+  } catch (error) {
+    console.error('Error updating to quantity entry modal:', error);
+    console.error('Full error details:', JSON.stringify(error, null, 2));
+    
+    // Acknowledge with basic response to prevent timeouts
     try {
-      console.log('Updating view with quantities form');
-      await client.views.update({
-        view_id: view.id,
-        view: {
-          type: "modal",
-          callback_id: "quantity_entry_modal",
-          private_metadata: JSON.stringify({ 
-            selectedIds: selectedMaterials, 
-            jobChannelId, 
-            user: body.user.id 
-          }),
-          title: { type: "plain_text", text: "Enter Quantities" },
-          submit: { type: "plain_text", text: "Review" },
-          close: { type: "plain_text", text: "Cancel" },
-          blocks: [
-            {
-              type: "section",
-              text: { 
-                type: "mrkdwn", 
-                text: `*Job:* <#${jobChannelId}>\n\n*Enter the quantity used for each material:*` 
-              }
-            },
-            ...quantityBlocks
-          ]
+      await ack({
+        response_action: "errors",
+        errors: {
+          "category_0": "Something went wrong. Please try again."
         }
       });
-      
-      console.log('Quantity entry modal opened via view update');
-    } catch (updateError) {
-      console.error('Error updating view:', updateError);
-      // Try to notify the user about the specific error
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: `Sorry, there was an issue displaying the quantities form. Please try again with fewer materials or check your connection.`
-      });
+    } catch (ackError) {
+      console.error('Error with acknowledgment:', ackError);
     }
-  } catch (error) {
-    console.error('Error in materials selection handler:', error);
-    console.error('Full error details:', JSON.stringify(error, null, 2));
     
     // Try to notify the user
     try {
