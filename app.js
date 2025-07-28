@@ -1479,61 +1479,35 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     });
     console.log('Message posted to channel successfully');
     
-// If file was generated successfully, upload it
-if (fileBuffer) {
-  try {
-    // Format filename
-    const cleanDate = serviceDate.replace(/-/g, '');
-    const filename = `${channelName}_${cleanDate}_inv_issue.${fileExtension}`;
-    
-    // Try target channel first, then job channel as fallback
-    let importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL;
-    let uploadSucceeded = false;
-    
-    // First try the configured import channel
-    if (importChannelId && importChannelId.trim() !== '') {
+    // If file was generated successfully, upload it
+    if (fileBuffer) {
       try {
-        console.log(`Trying to upload to configured channel ${importChannelId}`);
+        // Format filename
+        const cleanDate = serviceDate.replace(/-/g, '');
+        const filename = `${channelName}_${cleanDate}_inv_issue.${fileExtension}`;
+        
+        console.log(`Uploading ${fileExtension} file directly to job channel ${jobChannelId}`);
+        
+        // Always upload to the job channel for simplicity
         await client.files.upload({
-          channels: importChannelId,
+          channels: jobChannelId,
           file: fileBuffer,
           filename: filename,
           title: `Material Usage for ${channelName} on ${serviceDate}`,
-          initial_comment: `Material usage report for <#${jobChannelId}> ready for Acumatica import.`
+          initial_comment: `Material usage report for this job:`
         });
-        uploadSucceeded = true;
-        console.log('File uploaded successfully to import channel');
-      } catch (importChannelError) {
-        console.log('Could not upload to import channel, will try job channel');
-        if (importChannelError.data && importChannelError.data.error === 'not_in_channel') {
-          // Specific handling for not_in_channel error
-          console.log('Bot is not in the import channel - need to invite the bot first');
-        }
+        
+        console.log('File uploaded successfully to job channel');
+      } catch (uploadError) {
+        console.error('File upload failed:', uploadError);
+        
+        // Notify user
+        await client.chat.postMessage({
+          channel: userId,
+          text: `⚠️ There was an issue uploading the material usage file. Please try again or contact support.`
+        });
       }
     }
-    
-    // If import channel failed, try job channel as fallback
-    if (!uploadSucceeded) {
-      console.log(`Falling back to job channel ${jobChannelId} for file upload`);
-      await client.files.upload({
-        channels: jobChannelId, // Use job channel as fallback
-        file: fileBuffer,
-        filename: filename,
-        title: `Material Usage for ${channelName} on ${serviceDate}`,
-        initial_comment: `Material usage report ready for Acumatica import.`
-      });
-      console.log('File uploaded successfully to job channel');
-    }
-  } catch (uploadError) {
-    console.error('All file upload attempts failed:', uploadError);
-    
-    // Notify user
-    await client.chat.postMessage({
-      channel: userId,
-      text: `⚠️ There was an issue uploading the Acumatica import file. Please make sure the bot is invited to the target channel with \`/invite @service-bot\`.`
-    });
-  }
-}
 
     // Confirm to the user in a DM
     console.log('Sending confirmation to user:', userId);
