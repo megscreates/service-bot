@@ -61,12 +61,16 @@ function formatMaterialsList(materials) {
   return materialText;
 }
 
-// STEP 1: Job Channel + Category Selection
+// STEP 1: Job Channel + Category Selection + Job Details
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
   console.log('Materials command triggered by user:', body.user_id);
 
   try {
+    // Get today's date in YYYY-MM-DD format for default
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10);
+
     // Create category options for multi-select
     const categoryOptions = materialCategories.map((category, index) => ({
       text: {
@@ -90,7 +94,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "Select a job channel and which material categories you need:"
+              text: "Select a job channel and enter job details:"
             }
           },
           {
@@ -108,6 +112,103 @@ app.command('/materials', async ({ ack, body, client }) => {
             label: {
               type: "plain_text",
               text: "Job Channel",
+              emoji: true
+            }
+          },
+          {
+            type: "input",
+            block_id: "service_date",
+            element: {
+              type: "datepicker",
+              initial_date: dateStr,
+              placeholder: {
+                type: "plain_text",
+                text: "Select date",
+                emoji: true
+              },
+              action_id: "service_date_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Service Date",
+              emoji: true
+            }
+          },
+          {
+            type: "input",
+            block_id: "technicians",
+            element: {
+              type: "multi_users_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select technicians",
+                emoji: true
+              },
+              action_id: "technicians_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Technicians",
+              emoji: true
+            }
+          },
+          {
+            type: "input",
+            block_id: "drive_hours",
+            element: {
+              type: "plain_text_input",
+              action_id: "drive_hours_input",
+              placeholder: {
+                type: "plain_text",
+                text: "e.g. 2.5",
+                emoji: true
+              }
+            },
+            label: {
+              type: "plain_text",
+              text: "Total Drive Hours",
+              emoji: true
+            }
+          },
+          {
+            type: "input",
+            block_id: "labor_hours",
+            element: {
+              type: "plain_text_input",
+              action_id: "labor_hours_input",
+              placeholder: {
+                type: "plain_text",
+                text: "e.g. 4.5",
+                emoji: true
+              }
+            },
+            label: {
+              type: "plain_text",
+              text: "Total Labor Hours",
+              emoji: true
+            }
+          },
+          {
+            type: "input",
+            block_id: "lunch",
+            optional: true,
+            element: {
+              type: "checkboxes",
+              options: [
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Lunch break taken",
+                    emoji: true
+                  },
+                  value: "true"
+                }
+              ],
+              action_id: "lunch_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Lunch",
               emoji: true
             }
           },
@@ -135,7 +236,6 @@ app.command('/materials', async ({ ack, body, client }) => {
     });
   } catch (err) {
     console.error('Error opening selection modal:', err);
-    // Error handling as before
     try {
       await client.chat.postMessage({
         channel: body.user_id,
@@ -152,6 +252,13 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
   try {
     // Get the selected job channel
     const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
+    
+    // Get the new fields
+    const serviceDate = view.state.values.service_date.service_date_selected.selected_date;
+    const technicians = view.state.values.technicians.technicians_selected.selected_users || [];
+    const driveHours = view.state.values.drive_hours.drive_hours_input.value || "0";
+    const laborHours = view.state.values.labor_hours.labor_hours_input.value || "0";
+    const lunchTaken = view.state.values.lunch.lunch_selected.selected_options.length > 0;
     
     // Get selected categories
     const selectedCategoryIndexes = view.state.values.categories.categories_selected.selected_options.map(opt => 
@@ -257,8 +364,14 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
         type: "modal",
         callback_id: "materials_select_modal",
         private_metadata: JSON.stringify({ 
-          jobChannelId, 
-          selectedCategoryIndexes // Store for later reference
+          jobChannelId,
+          selectedCategoryIndexes, // Store for later reference
+          // Also store the new fields
+          serviceDate,
+          technicians,
+          driveHours,
+          laborHours,
+          lunchTaken
         }),
         title: { type: "plain_text", text: "Select Materials" },
         submit: { type: "plain_text", text: "Next" },
@@ -289,6 +402,12 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     // Get previous metadata
     const metadata = JSON.parse(view.private_metadata || '{}');
     const jobChannelId = metadata.jobChannelId;
+    const serviceDate = metadata.serviceDate;
+    const technicians = metadata.technicians;
+    const driveHours = metadata.driveHours;
+    const laborHours = metadata.laborHours;
+    const lunchTaken = metadata.lunchTaken;
+    
     console.log('Job channel from metadata:', jobChannelId);
     
     // Get selected material IDs from all categories
@@ -356,8 +475,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
       };
     }).filter(block => block !== null);
     
-    // IMPORTANT: Use ack() with response_action to update the view directly
-    // Don't try to update separately after acknowledging
+    // IMPORTANT: Update view directly in the acknowledgment
     await ack({
       response_action: "update",
       view: {
@@ -365,8 +483,14 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
         callback_id: "quantity_entry_modal",
         private_metadata: JSON.stringify({ 
           selectedIds: selectedMaterials, 
-          jobChannelId, 
-          user: body.user.id 
+          jobChannelId,
+          user: body.user.id,
+          // Pass through the job details
+          serviceDate,
+          technicians,
+          driveHours,
+          laborHours,
+          lunchTaken
         }),
         title: { type: "plain_text", text: "Enter Quantities" },
         submit: { type: "plain_text", text: "Review" },
@@ -423,6 +547,14 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     const selectedIds = metadata.selectedIds;
     const jobChannelId = metadata.jobChannelId;
     const userId = metadata.user;
+    
+    // Get job details
+    const serviceDate = metadata.serviceDate;
+    const technicians = metadata.technicians;
+    const driveHours = metadata.driveHours;
+    const laborHours = metadata.laborHours;
+    const lunchTaken = metadata.lunchTaken;
+    
     const values = view.state.values;
     
     console.log(`Processing ${selectedIds.length} materials with quantities`);
@@ -483,9 +615,8 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
       return;
     }
 
-    // Build review blocks with filled circle format
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10);
+    // Format technicians as mentions
+    const technicianMentions = technicians.map(tech => `<@${tech}>`).join(', ') || "None";
     
     // Format the materials with filled circles and proper spacing
     const formattedMaterials = formatMaterialsList(materialsWithQty);
@@ -499,10 +630,15 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
         type: "modal",
         callback_id: "review_modal",
         private_metadata: JSON.stringify({ 
-          materialsWithQty, 
+          materialsWithQty,
           userId, 
-          dateStr, 
-          jobChannelId 
+          jobChannelId,
+          // Include job details
+          serviceDate,
+          technicians,
+          driveHours,
+          laborHours,
+          lunchTaken
         }),
         title: { type: "plain_text", text: "Review Submission" },
         submit: { type: "plain_text", text: "Submit" },
@@ -520,9 +656,16 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
             elements: [
               {
                 type: "mrkdwn",
-                text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>`
+                text: `*Job:* <#${jobChannelId}> • ${serviceDate} • <@${userId}>`
               }
             ]
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours}\n*Labor Hours:* ${laborHours}\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+            }
           },
           {
             type: "divider"
@@ -572,12 +715,22 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     
     // Get the data from private_metadata
     const metadata = JSON.parse(view.private_metadata);
-    const { materialsWithQty, userId, dateStr, jobChannelId } = metadata;
+    const { materialsWithQty, userId, jobChannelId } = metadata;
+    
+    // Get job details
+    const serviceDate = metadata.serviceDate;
+    const technicians = metadata.technicians;
+    const driveHours = metadata.driveHours;
+    const laborHours = metadata.laborHours;
+    const lunchTaken = metadata.lunchTaken;
     
     console.log(`Posting ${materialsWithQty.length} materials to channel ${jobChannelId}`);
 
     // Format the materials list with the same helper function
     const formattedMaterials = formatMaterialsList(materialsWithQty);
+    
+    // Format technicians as mentions
+    const technicianMentions = technicians.map(tech => `<@${tech}>`).join(', ') || "None";
 
     // Get job channel name for better display
     let channelName = "";
@@ -611,9 +764,16 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           elements: [
             {
               type: "mrkdwn",
-              text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>`
+              text: `*Job:* <#${jobChannelId}> • ${serviceDate} • <@${userId}>`
             }
           ]
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours}\n*Labor Hours:* ${laborHours}\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+          }
         },
         {
           type: "divider"
@@ -654,7 +814,11 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       jobChannel: channelName,
       jobChannelId,
       submittedBy: userId,
-      date: dateStr,
+      serviceDate,
+      technicians,
+      driveHours: parseFloat(driveHours) || 0,
+      laborHours: parseFloat(laborHours) || 0,
+      lunchTaken,
       materials: materialsWithQty.map(mat => ({
         itemId: mat.id,
         description: mat.label,
