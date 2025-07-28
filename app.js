@@ -207,7 +207,8 @@ app.command('/service', async ({ ack, body, client }) => {
                 action_id: "job_channel_selected",
                   filter: {
                   include: ["public", "private"], 
-                  exclude_bot_users: true         
+                  exclude_bot_users: true
+                }
               },
               label: {
                 type: "plain_text",
