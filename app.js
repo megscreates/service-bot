@@ -213,7 +213,6 @@ app.command('/service', async ({ ack, body, client }) => {
                 type: "plain_text",
                 text: "Job Channel",
                 emoji: true
-              }
             },
             {
               type: "input",
