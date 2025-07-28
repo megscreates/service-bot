@@ -34,7 +34,7 @@ const materialCategories = [
     ]
   },
   {
-    name: "Adhesives, Sealants, Coatings, & Solvents",
+    name: "Adhesives, Sealants, & Coatings",
     items: [
       { id: "INV0000602", label: "NP1 Sealant Tube (Black)", unit: "each" },
       { id: "INV0000599", label: "NP1 Sealant Tube (White)", unit: "each" },
@@ -84,7 +84,7 @@ const materialCategories = [
     ]
   },
   {
-    name: "TPO Membrane, Tape, & Flashing Details",
+    name: "TPO",
     items: [
       { id: "INV0000010", label: "TPO 60MIL [5ft] (White)", unit: "ft" },
       { id: "INV0000012", label: "TPO 60MIL [5ft] (Grey)", unit: "ft" },
@@ -108,7 +108,7 @@ const materialCategories = [
     ]
   },
   {
-    name: "PVC Membrane, Tape, & Flashing Details",
+    name: "PVC",
     items: [
       { id: "INV0000198", label: "PVC 50MIL [3.25ft x 100ft] (Grey)", unit: "ft" },
       { id: "INV0000195", label: "PVC 50MIL [5ft x 100ft] (White)", unit: "ft" },
@@ -125,7 +125,7 @@ const materialCategories = [
     ]
   },
   {
-    name: "EPDM Membrane, Tape, & Flashing Details",
+    name: "EPDM",
     items: [
       { id: "INV0016960", label: "EPDM R 45MIL [10ft x 100ft]", unit: "ft" },
       { id: "INV0016964", label: "EPDM NR 45MIL [10ft x 100ft]", unit: "ft" },
@@ -224,7 +224,7 @@ const materialCategories = [
     ]
   },
   {
-    name: "Fasteners",
+    name: "JM Fasteners",
     items: [
       { id: "INV0000459", label: "Galvalume-Coated Plate [2\"]", unit: "each" },
       { id: "INV0000460", label: "Galvalume-Coated Plate [3\"]", unit: "each" },
@@ -268,7 +268,12 @@ const materialCategories = [
       { id: "INV0000388", label: "XHL #21 Phillips [5\"]", unit: "each" },
       { id: "INV0000332", label: "UF #12 Fastener [5\"]", unit: "each" },
       { id: "INV0000334", label: "UF #12 Fastener [7\"]", unit: "each" },
-      { id: "INV0000346", label: "UF #12 Plate [3\"]", unit: "each" },
+      { id: "INV0000346", label: "UF #12 Plate [3\"]", unit: "each" }
+    ]
+  },
+  {
+    name: "CAR Fasteners",
+    items: [
       { id: "INV0016991", label: "HP-X Fastener [2.375\"]", unit: "each" },
       { id: "INV0016992", label: "HP-X Fastener [4\"]", unit: "each" },
       { id: "INV0016993", label: "HP-X Fastener [5\"]", unit: "each" },
@@ -284,7 +289,7 @@ const materialCategories = [
       { id: "INV0016990", label: "HP Fastener [9\"]", unit: "each" },
       { id: "INV0016980", label: "HP Fastener [10\"]", unit: "each" },
       { id: "INV0016981", label: "HP Fastener [11\"]", unit: "each" },
-      { id: "INV0016982", label: "HP Fastener [12\"]", unit: "each" },
+      { id: "INV0016982", label: "HP Fastener [12\"]", unit: "each" }
     ]
   }
 ];
