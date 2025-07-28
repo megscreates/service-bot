@@ -1,41 +1,43 @@
 const { App } = require('@slack/bolt');
-const express = require('express');
 const { materialCategories, getPluralLabel, getSingularLabel, getQuantityLabel } = require('./materials');
 
-// Create Express app for handling requests
-const expressApp = express();
-
-// Initialize your Bolt app with both Socket Mode and HTTP
+// Initialize your app with just what we need
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  appToken: process.env.SLACK_APP_TOKEN,
   socketMode: true,
-  customRoutes: [
-    {
-      path: '/health',
-      method: ['GET'],
-      handler: (req, res) => {
-        res.writeHead(200);
-        res.end('Health check OK');
-      },
-    },
-  ]
+  appToken: process.env.SLACK_APP_TOKEN,
+  port: process.env.PORT || 3000
 });
 
-// Global error handler with better logging
+// Add detailed error handling
 app.error(async (error) => {
-  console.error('SLACK APP ERROR:', JSON.stringify({
-    name: error.name,
-    message: error.message,
-    code: error.code,
-    stack: error.stack
-  }));
+  console.error('SLACK APP ERROR:', error);
 });
 
-// Helper functions (unchanged)
-function getMaterialById(id) { /* your existing code */ }
-function formatMaterialsList(materials) { /* your existing code */ }
+// Helper functions
+function getMaterialById(id) {
+  for (const category of materialCategories) {
+    for (const material of category.items) {
+      if (material.id === id) {
+        return material;
+      }
+    }
+  }
+  return null;
+}
+
+function formatMaterialsList(materials) {
+  let materialText = '';
+  
+  materials.forEach((mat) => {
+    const prefix = "»";
+    const qty = parseInt(mat.qty, 10);
+    materialText += `${prefix}   *${mat.label}* — ${mat.qty} ${getQuantityLabel(mat.unit, qty)}\n\n`;
+  });
+  
+  return materialText;
+}
 
 // -------- STEP 1: Job Channel Selection --------
 app.command('/materials', async ({ ack, body, client }) => {
@@ -87,87 +89,46 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// -------- STEP 2: Materials Selection Modal (with categories) --------
+// -------- STEP 2: Handle the channel selection --------
+// SUPER SIMPLIFIED version that just acknowledges and does nothing else
 app.view('job_channel_select', async ({ ack, body, view, client }) => {
-  // Acknowledge immediately to prevent timeouts
-  await ack();
-  console.log('Channel selection acknowledged');
-  
   try {
-    console.log('Job channel selected by user:', body.user.id);
+    console.log('Channel selection view received, immediately acknowledging');
+    // Just acknowledge and don't try to update view or open another modal
+    await ack();
+    console.log('Channel selection acknowledged successfully');
     
     // Get the selected job channel
     const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
     console.log('Selected job channel:', jobChannelId);
     
-    // Create simpler blocks for testing
-    const blocks = [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `Selected job: <#${jobChannelId}>\n\nTesting channel selection only.`
-        }
-      }
-    ];
-
-    // Use a separate API call to open a new modal instead of response_action
-    console.log('Opening materials modal for testing');
-    await client.views.open({
-      trigger_id: body.trigger_id,
-      view: {
-        type: "modal",
-        callback_id: "materials_test_modal",
-        title: { type: "plain_text", text: "Materials Test" },
-        submit: { type: "plain_text", text: "Submit" },
-        close: { type: "plain_text", text: "Cancel" },
-        blocks: blocks
-      }
+    // Now send a direct message to the user instead of trying to open another modal
+    console.log('Sending DM to user as confirmation');
+    await client.chat.postMessage({
+      channel: body.user.id,
+      text: `You selected channel <#${jobChannelId}>. This is a test message to verify functionality.`
     });
+    console.log('DM sent successfully');
     
-    console.log('Materials test modal opened successfully');
   } catch (error) {
-    console.error('Error opening test modal:', error);
-    console.error(JSON.stringify(error));
-    
-    // Try to notify the user
+    console.error('Error in job_channel_select handler:', error);
+    // Try to notify the user about the error
     try {
       await client.chat.postMessage({
         channel: body.user.id,
-        text: `❌ Sorry, there was an error processing your selection: ${error.message}`
+        text: `❌ Sorry, there was an error: ${error.message}`
       });
-    } catch (notifyError) {
-      console.error('Error sending error notification:', notifyError);
+    } catch (dmError) {
+      console.error('Error sending error notification:', dmError);
     }
-  }
-});
-
-// Simple handler for test modal
-app.view('materials_test_modal', async ({ ack, body, view }) => {
-  try {
-    console.log('Test modal submitted');
-    await ack();
-    console.log('Test modal acknowledged');
-  } catch (error) {
-    console.error('Error in test modal:', error);
   }
 });
 
 // Start the app
 (async () => {
   try {
-    // Start listening on a specific port
-    expressApp.get('/ping', (req, res) => {
-      res.send('pong');
-    });
-    
-    expressApp.listen(process.env.PORT || 3000, () => {
-      console.log(`Express server listening on port ${process.env.PORT || 3000}`);
-    });
-    
-    // Start the Bolt app
     await app.start();
-    console.log('⚡️ Service Bot is running!');
+    console.log(`⚡️ Service Bot is running on port ${process.env.PORT || 3000}`);
   } catch (error) {
     console.error('Failed to start app:', error);
   }
