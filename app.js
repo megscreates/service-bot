@@ -52,7 +52,8 @@ function formatMaterialsList(materials) {
     // Use arrow instead of numbers
     const prefix = "»";
     
-    const qty = parseInt(mat.qty, 10);
+    // Handle quantity as float now instead of integer
+    const qty = parseFloat(mat.qty);
     materialText += `${prefix}   *${mat.label}* — ${mat.qty} ${getQuantityLabel(mat.unit, qty)}\n\n`;
   });
   
@@ -348,7 +349,8 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
           placeholder: {
             type: "plain_text",
             text: "Enter amount"
-          }
+          },
+          subtype: "number" // This triggers the number pad keyboard on mobile
         }
       };
     }).filter(block => block !== null);
@@ -420,35 +422,57 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     console.log(`Processing ${selectedIds.length} materials with quantities`);
 
     // Build material/quantity list and validate
-    let hasError = false;
-    const errorBlocks = {};
-    const materialsWithQty = selectedIds.map(id => {
+    const materialsWithQty = [];
+    
+    for (const id of selectedIds) {
       const mat = getMaterialById(id);
-      if (!mat) return null;
+      if (!mat) continue;
       
       const qtyBlock = values[`qty_${id}`];
-      const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
-      const qty = parseInt(qtyRaw, 10);
-
-      if (isNaN(qty) || qty < 1 || !/^\d+$/.test(qtyRaw)) {
-        hasError = true;
-        errorBlocks[`qty_${id}`] = "Enter a positive whole number (1+)";
+      const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : "0";
+      
+      // Convert to number with parseFloat (for decimal support)
+      let qty = parseFloat(qtyRaw);
+      qty = isNaN(qty) ? 0 : qty;
+      
+      // Skip this item if quantity is 0 (remove it)
+      if (qty === 0) {
+        console.log(`Item ${id} has quantity 0, skipping`);
+        continue;
       }
-
-      return {
+      
+      // Apply our validation rules
+      if (qty < 0.5) {
+        // Round up to minimum
+        qty = 0.5;
+        console.log(`Item ${id} quantity rounded up to 0.5`);
+      }
+      else if (qty > 987) {
+        // Cap at maximum
+        qty = 987;
+        console.log(`Item ${id} quantity capped at 987`);
+      }
+      
+      // Format to max 2 decimal places
+      qty = Math.round(qty * 100) / 100;
+      
+      // Add to processed list
+      materialsWithQty.push({
         id,
         label: mat.label,
         unit: mat.unit,
-        qty: qtyRaw
-      };
-    }).filter(mat => mat !== null);
-
-    if (hasError) {
-      // Return validation errors
-      console.log('Validation errors in quantities');
+        qty: qty.toString() // Convert back to string for consistency
+      });
+    }
+    
+    // If all materials were removed (all quantities were 0)
+    if (materialsWithQty.length === 0) {
+      console.log('All quantities were zero - showing error');
       await ack({
         response_action: "errors",
-        errors: errorBlocks
+        errors: {
+          "qty_" + selectedIds[0]: "Please enter at least one valid quantity"
+        }
       });
       return;
     }
@@ -628,7 +652,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       materials: materialsWithQty.map(mat => ({
         itemId: mat.id,
         description: mat.label,
-        quantity: parseInt(mat.qty, 10),
+        quantity: parseFloat(mat.qty),
         unit: mat.unit
       }))
     };
