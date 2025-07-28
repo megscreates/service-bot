@@ -350,7 +350,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
             type: "plain_text",
             text: "Enter amount"
           }
-          // Removed subtype: "number" as it's causing the API error
+          // NO subtype property here!
         }
       };
     }).filter(block => block !== null);
