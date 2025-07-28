@@ -1,5 +1,6 @@
 const { App } = require('@slack/bolt');
 const { materialCategories, getPluralLabel, getSingularLabel, getQuantityLabel } = require('./materials');
+const ExcelJS = require('exceljs'); // Add ExcelJS for file generation
 
 // Initialize the app with what we need
 const app = new App({
@@ -81,6 +82,59 @@ function formatTechniciansList(technicians) {
 // Helper function to find category index by name
 function getCategoryIndexByName(name) {
   return materialCategories.findIndex(category => category.name === name);
+}
+
+// Helper function to format number with 2 decimal places
+function formatNumber(num) {
+  return parseFloat(num).toFixed(2);
+}
+
+// Helper function to generate Acumatica import file
+async function generateAcumaticaImportFile(data) {
+  try {
+    // Create a new workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Material Issue');
+    
+    // Add headers
+    worksheet.columns = [
+      { header: 'Date', key: 'date' },
+      { header: 'Job', key: 'job' },
+      { header: 'Item ID', key: 'itemId' },
+      { header: 'Description', key: 'description' },
+      { header: 'Quantity', key: 'quantity' },
+      { header: 'Unit', key: 'unit' },
+      { header: 'Location ID', key: 'locationId' },
+      { header: 'Technician', key: 'technician' },
+      { header: 'Status', key: 'status' },
+    ];
+    
+    // Add row for each material
+    data.materials.forEach(material => {
+      // Get primary technician
+      const primaryTech = data.technicians[0] || data.submittedBy;
+      
+      worksheet.addRow({
+        date: data.serviceDate,
+        job: data.jobChannel,
+        itemId: material.itemId,
+        description: material.description,
+        quantity: material.quantity,
+        unit: material.unit,
+        locationId: data.serviceTruck,
+        technician: primaryTech,
+        status: data.jobStatus,
+      });
+    });
+    
+    // Generate buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    return buffer;
+  } catch (error) {
+    console.error('Error generating Excel file:', error);
+    throw error;
+  }
 }
 
 // STEP 1: Job Channel + Category Selection + Job Details
@@ -278,7 +332,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             },
             label: {
               type: "plain_text",
-              text: "Total Drive Hours (per tech)",
+              text: "Drive Hours (per tech)",
               emoji: true
             }
           },
@@ -296,7 +350,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             },
             label: {
               type: "plain_text",
-              text: "Total Labor Hours (per tech)",
+              text: "Labor Hours (per tech)",
               emoji: true
             }
           },
@@ -563,7 +617,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
         element: {
           type: "plain_text_input",
           action_id: "quantity_input",
-          initial_value: "1", // Default to 1 for convenience
+          // Removed initial_value: "1"
           placeholder: {
             type: "plain_text",
             text: "Enter amount"
@@ -824,6 +878,14 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
                     emoji: true
                   },
                   value: "Partially Billable (See Notes)"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Job not completed",
+                    emoji: true
+                  },
+                  value: "Job not completed"
                 }
               ],
               action_id: "billing_status_selected"
@@ -911,9 +973,11 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
     const totalDriveHours = driveHoursPerTech * techCount;
     const totalLaborHours = laborHoursPerTech * techCount;
     
-    // Format to 2 decimal places
-    const formattedTotalDrive = totalDriveHours.toFixed(2);
-    const formattedTotalLabor = totalLaborHours.toFixed(2);
+    // Format hours with 2 decimal places always
+    const formattedDrivePerTech = formatNumber(driveHoursPerTech);
+    const formattedLaborPerTech = formatNumber(laborHoursPerTech);
+    const formattedTotalDrive = formatNumber(totalDriveHours);
+    const formattedTotalLabor = formatNumber(totalLaborHours);
     
     // Get current date and time for the timestamp
     const timestamp = getCurrentFormattedDateTime();
@@ -941,8 +1005,8 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
           serviceTruck,
           serviceTruckText,
           technicians,
-          driveHours,
-          laborHours,
+          driveHours: formattedDrivePerTech,
+          laborHours: formattedLaborPerTech,
           lunchTaken,
           // Include calculated totals
           totalDriveHours: formattedTotalDrive,
@@ -996,14 +1060,14 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "*Technicians:*\n" + techniciansList
+              text: `*Service Truck:* ${serviceTruckText}`
             }
           },
           {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Service Truck:* ${serviceTruckText}`
+              text: "*Technicians:*\n" + techniciansList
             }
           },
           {
@@ -1055,8 +1119,8 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `»   *Total Drive Hours:* ${driveHours} per tech (${formattedTotalDrive} total)\n»   *Total Labor Hours:* ${laborHours} per tech (${formattedTotalLabor} total)`
-              // Removed lunch taken
+              text: `»   *Drive Hours:* ${formattedDrivePerTech} per tech — ${formattedTotalDrive} total\n»   *Labor Hours:* ${formattedLaborPerTech} per tech — ${formattedTotalLabor} total`
+              // Removed lunch taken and replaced parentheses with em dash
             }
           },
           {
@@ -1177,6 +1241,42 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
 
     // Get current timestamp at posting time
     const currentTimestamp = getCurrentFormattedDateTime();
+    
+    // Prepare data for Acumatica import
+    const acumaticaData = {
+      jobChannel: channelName,
+      jobChannelId,
+      submittedBy: userId,
+      serviceDate,
+      serviceTruck,
+      technicians,
+      driveHoursPerTech: parseFloat(driveHours) || 0,
+      laborHoursPerTech: parseFloat(laborHours) || 0,
+      totalDriveHours: parseFloat(totalDriveHours) || 0,
+      totalLaborHours: parseFloat(totalLaborHours) || 0,
+      lunchTaken,
+      jobStatus,
+      billingStatus,
+      scopeOfWork,
+      internalNotes,
+      timestamp: currentTimestamp,
+      materials: materialsWithQty.map(mat => ({
+        itemId: mat.id,
+        description: mat.label,
+        quantity: parseFloat(mat.qty),
+        unit: mat.unit
+      }))
+    };
+    
+    // Generate Excel file for Acumatica import
+    let excelBuffer;
+    try {
+      excelBuffer = await generateAcumaticaImportFile(acumaticaData);
+      console.log("Excel file generated successfully");
+    } catch (excelError) {
+      console.error("Error generating Excel file:", excelError);
+      // Continue with the rest of the function even if Excel fails
+    }
 
     // Post the formatted message to the job channel
     console.log('Posting message to channel:', jobChannelId);
@@ -1225,14 +1325,14 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "*Technicians:*\n" + techniciansList
+            text: `*Service Truck:* ${serviceTruckText}`
           }
         },
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Service Truck:* ${serviceTruckText}`
+            text: "*Technicians:*\n" + techniciansList
           }
         },
         {
@@ -1283,8 +1383,8 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `»   *Total Drive Hours:* ${driveHours} per tech (${totalDriveHours} total)\n»   *Total Labor Hours:* ${laborHours} per tech (${totalLaborHours} total)`
-            // Removed lunch taken
+            text: `»   *Drive Hours:* ${driveHours} per tech — ${totalDriveHours} total\n»   *Labor Hours:* ${laborHours} per tech — ${totalLaborHours} total`
+            // Removed lunch taken and replaced parentheses with em dash
           }
         },
         {
@@ -1330,6 +1430,30 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       ]
     });
     console.log('Message posted to channel successfully');
+    
+    // If Excel file was generated successfully, upload it
+    if (excelBuffer) {
+      try {
+        // Create a filename with date, job, and user
+        const date = serviceDate.replace(/-/g, '');
+        const filename = `${date}_${channelName}_materials_${userId}.xlsx`;
+        
+        // Upload to the import channel or to a specific user
+        const importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL || "#acumatica-imports"; // Set your channel in env vars
+        
+        await client.files.upload({
+          channels: importChannelId,
+          file: excelBuffer,
+          filename: filename,
+          title: `Material Usage for ${channelName} on ${serviceDate}`,
+          initial_comment: `Material usage report generated from EOD submission by <@${userId}> for <#${jobChannelId}>.`
+        });
+        
+        console.log('Excel file uploaded successfully');
+      } catch (uploadError) {
+        console.error('Error uploading Excel file:', uploadError);
+      }
+    }
 
     // Confirm to the user in a DM
     console.log('Sending confirmation to user:', userId);
@@ -1347,37 +1471,6 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       ]
     });
     console.log('Confirmation sent to user');
-
-    // Prepare data for Acumatica
-    const acumaticaData = {
-      jobChannel: channelName,
-      jobChannelId,
-      submittedBy: userId,
-      serviceDate,
-      serviceTruck,
-      technicians,
-      // Include both per-tech and total hours
-      driveHoursPerTech: parseFloat(driveHours) || 0,
-      laborHoursPerTech: parseFloat(laborHours) || 0,
-      totalDriveHours: parseFloat(totalDriveHours) || 0,
-      totalLaborHours: parseFloat(totalLaborHours) || 0,
-      lunchTaken,
-      // Include job status info
-      jobStatus,
-      billingStatus,
-      scopeOfWork,
-      internalNotes,
-      timestamp: currentTimestamp,
-      materials: materialsWithQty.map(mat => ({
-        itemId: mat.id,
-        description: mat.label,
-        quantity: parseFloat(mat.qty),
-        unit: mat.unit
-      }))
-    };
-
-    // Later: Send to Acumatica
-    console.log("Ready for Acumatica import:", acumaticaData);
   } catch (error) {
     console.error('Error processing review submission:', error);
     
