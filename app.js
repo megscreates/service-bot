@@ -81,9 +81,9 @@ function getCurrentFormattedDateTime() {
   return `${year}-${month}-${day} at ${hours}:${minutes}`;
 }
 
-// Helper: Format technicians as a list with arrows
+// Helper: Format technicians as a comma-separated list (not newlines)
 function formatTechniciansList(technicians) {
-  return technicians.map(tech => `»   <@${tech}>`).join('\n');
+  return technicians.map(tech => `<@${tech}>`).join(', ');
 }
 
 // Helper function to find category index by name
@@ -1015,6 +1015,11 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
     // Format the materials with filled circles and proper spacing
     const formattedMaterials = formatMaterialsList(materialsWithQty);
     
+    // Format scope of work as block quote
+    const formattedScope = scopeOfWork ? 
+      scopeOfWork.split('\n').map(line => `> ${line}`).join('\n') : 
+      "> None provided";
+    
     console.log('Updating view for final review');
 
     // Update the current view
@@ -1095,7 +1100,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "*Technicians:*\n\n" + techniciansList
+              text: `*Technicians:* ${techniciansList}`
             }
           },
           {
@@ -1128,9 +1133,8 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
           {
             type: "section",
             text: {
-              type: "plain_text",
-              text: scopeOfWork || "None provided",
-              emoji: true
+              type: "mrkdwn",
+              text: formattedScope
             }
           },
           {
@@ -1253,8 +1257,17 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     // Format the materials list with the same helper function
     const formattedMaterials = formatMaterialsList(materialsWithQty);
     
-    // Format technicians as a list with arrows
+    // Format technicians as a comma-separated list
     const techniciansList = formatTechniciansList(technicians);
+    
+    // Format scope of work and internal notes as block quotes
+    const formattedScope = scopeOfWork ? 
+      scopeOfWork.split('\n').map(line => `> ${line}`).join('\n') : 
+      "> None provided";
+    
+    const formattedNotes = internalNotes ? 
+      internalNotes.split('\n').map(line => `> ${line}`).join('\n') : 
+      "";
 
     // Get job channel name for better display
     let channelName = "";
@@ -1367,7 +1380,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "*Technicians:*\n\n" + techniciansList
+            text: `*Technicians:* ${techniciansList}`
           }
         },
         {
@@ -1401,7 +1414,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: scopeOfWork ? scopeOfWork.replace(/- /g, "»   ") : "None provided"
+            text: formattedScope
           }
         },
         {
@@ -1455,7 +1468,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: internalNotes.replace(/- /g, "»   ")
+              text: formattedNotes
             }
           },
         ] : []),
