@@ -92,7 +92,6 @@ app.command('/materials', async ({ ack, body, client }) => {
 
 // -------- STEP 2: Materials Selection Modal (with categories) --------
 app.view('job_channel_select', async ({ ack, body, view, client }) => {
-  // KEY FIX: Acknowledge immediately before doing anything else!
   await ack();
   console.log('Channel selection acknowledged successfully');
   
@@ -141,7 +140,7 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
         }
       });
 
-      // Add multi-select for this category
+      // Add multi-select for this category - no longer limiting to 10 items
       blocks.push({
         type: "input",
         block_id: `category_${index}`,
@@ -171,7 +170,7 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
       });
     });
 
-    // Open materials selection modal as a new modal (since we already acknowledged)
+    // Open materials selection modal
     await client.views.open({
       trigger_id: body.trigger_id,
       view: {
@@ -203,7 +202,6 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
 
 // -------- STEP 3: Quantity Entry Modal --------
 app.view('materials_select_modal', async ({ ack, body, view, client }) => {
-  // KEY FIX: Acknowledge immediately before doing anything else!
   await ack();
   console.log('Materials selection acknowledged successfully');
   
@@ -267,6 +265,8 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
         element: {
           type: "plain_text_input",
           action_id: "quantity_input",
+          // Add input_type: "number" for mobile numeric keyboard
+          initial_value: "1", // Default to 1 as a starting value
           placeholder: {
             type: "plain_text",
             text: "Enter amount"
@@ -275,7 +275,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
       };
     }).filter(block => block !== null);
     
-    // Open quantity modal as a new modal
+    // Open quantity modal
     await client.views.open({
       trigger_id: body.trigger_id,
       view: {
@@ -375,7 +375,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     
     console.log('Updating view for review');
 
-    // KEY CHANGE: Update the current view instead of opening a new one
+    // Update the current view
     await ack({
       response_action: "update",
       view: {
@@ -442,7 +442,6 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
 
 // -------- STEP 5: Submit and Post to Job Channel --------
 app.view('review_modal', async ({ ack, body, view, client }) => {
-  // KEY FIX: Acknowledge immediately before doing anything else!
   await ack();
   console.log('Review submission acknowledged successfully');
   
