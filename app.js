@@ -1,6 +1,5 @@
 const { App } = require('@slack/bolt');
 const { materialCategories, getPluralLabel, getSingularLabel, getQuantityLabel } = require('./materials');
-const ExcelJS = require('exceljs'); // Add ExcelJS for file generation
 
 // Initialize the app with what we need
 const app = new App({
@@ -102,81 +101,29 @@ function getTruckNumber(truckValue) {
   return truckValue.replace(/^TRUCK00/, '');
 }
 
-// Helper function to generate Acumatica import file
-async function generateAcumaticaImportFile(data) {
-  try {
-    // Create a new workbook
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Material Issue');
-    
-    // Add headers for Acumatica import
-    worksheet.columns = [
-      { header: 'Tran. Type', key: 'tranType' },
-      { header: 'Branch', key: 'branch' },      // Added Branch
-      { header: 'Inventory ID', key: 'inventoryId' },
-      { header: 'Warehouse', key: 'warehouse' }, // Added Warehouse 
-      { header: 'Location', key: 'location' },   // Added Location
-      { header: 'Quantity', key: 'quantity' },   // Added Quantity
-      { header: 'UOM', key: 'uom' },
-      { header: 'Reason Code', key: 'reasonCode' },
-      { header: 'Project Task', key: 'projectTask' },
-      { header: 'Cost Code', key: 'costCode' },
-    ];
-    
-    // Add row for each material
-    data.materials.forEach(material => {
-      worksheet.addRow({
-        tranType: "ISSUE",
-        branch: "11100",
-        inventoryId: material.itemId,
-        warehouse: "0001",
-        location: data.serviceTruck,
-        quantity: material.quantity,
-        uom: "", // leave blank for now
-        reasonCode: "ISSUE",
-        projectTask: "13",
-        costCode: "0000"
-      });
-    });
-    
-    // Generate buffer
-    const buffer = await workbook.xlsx.writeBuffer();
-    
-    return buffer;
-  } catch (error) {
-    console.error('Error generating Excel file:', error);
-    throw error;
-  }
-}
-
-// Helper function to generate CSV as a backup option
-async function generateAcumaticaImportCSV(data) {
-  try {
-    // CSV header
-    let csvContent = 'Tran. Type,Branch,Inventory ID,Warehouse,Location,Quantity,UOM,Reason Code,Project Task,Cost Code\n';
-    
-    // Add rows for materials
-    data.materials.forEach(material => {
-      csvContent += [
-        "ISSUE",
-        "11100",
-        material.itemId,
-        "0001",
-        data.serviceTruck,
-        material.quantity,
-        "", // UOM left blank
-        "ISSUE",
-        "13",
-        "0000"
-      ].join(',') + '\n';
-    });
-    
-    // Return as buffer
-    return Buffer.from(csvContent, 'utf8');
-  } catch (error) {
-    console.error('Error generating CSV:', error);
-    throw error;
-  }
+// Simple function to generate CSV for Acumatica import
+function generateAcumaticaImportCSV(data) {
+  // CSV header
+  let csvContent = 'Tran. Type,Branch,Inventory ID,Warehouse,Location,Quantity,UOM,Reason Code,Project Task,Cost Code\n';
+  
+  // Add rows for materials
+  data.materials.forEach(material => {
+    csvContent += [
+      "ISSUE",
+      "11100",
+      material.itemId,
+      "0001",
+      data.serviceTruck,
+      material.quantity,
+      "", // UOM left blank
+      "ISSUE",
+      "13",
+      "0000"
+    ].join(',') + '\n';
+  });
+  
+  // Return as string
+  return csvContent;
 }
 
 // STEP 1: Job Channel + Category Selection + Job Details
@@ -1283,24 +1230,9 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     // Get current timestamp at posting time
     const currentTimestamp = getCurrentFormattedDateTime();
     
-    // Prepare data for Acumatica import
+    // Generate CSV data
     const acumaticaData = {
-      jobChannel: channelName,
-      jobChannelId,
-      submittedBy: userId,
-      serviceDate,
       serviceTruck,
-      technicians,
-      driveHoursPerTech: parseFloat(driveHours) || 0,
-      laborHoursPerTech: parseFloat(laborHours) || 0,
-      totalDriveHours: parseFloat(totalDriveHours) || 0,
-      totalLaborHours: parseFloat(totalLaborHours) || 0,
-      lunchTaken,
-      jobStatus,
-      billingStatus,
-      scopeOfWork,
-      internalNotes,
-      timestamp: currentTimestamp,
       materials: materialsWithQty.map(mat => ({
         itemId: mat.id,
         description: mat.label,
@@ -1309,26 +1241,13 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       }))
     };
     
-    // Try to generate Excel file first, fall back to CSV if it fails
-    let fileBuffer;
-    let fileExtension = 'xlsx';
-    try {
-      fileBuffer = await generateAcumaticaImportFile(acumaticaData);
-      console.log("Excel file generated successfully");
-    } catch (excelError) {
-      console.error("Error generating Excel file, trying CSV:", excelError);
-      try {
-        fileBuffer = await generateAcumaticaImportCSV(acumaticaData);
-        fileExtension = 'csv';
-        console.log("CSV generated as fallback");
-      } catch (csvError) {
-        console.error("Error generating CSV file:", csvError);
-      }
-    }
+    // Generate CSV string
+    const csvContent = generateAcumaticaImportCSV(acumaticaData);
+    console.log("CSV generated successfully");
 
     // Post the formatted message to the job channel
     console.log('Posting message to channel:', jobChannelId);
-    await client.chat.postMessage({
+    const messageResponse = await client.chat.postMessage({
       channel: jobChannelId,
       text: `EOD Service Summary for ${channelName} submitted by <@${userId}>`,
       blocks: [
@@ -1432,7 +1351,6 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           text: {
             type: "mrkdwn",
             text: `»   *Drive Hours:* ${driveHours} per tech — ${totalDriveHours} total\n»   *Labor Hours:* ${laborHours} per tech — ${totalLaborHours} total`
-            // Removed lunch taken and replaced parentheses with em dash
           }
         },
         {
@@ -1479,35 +1397,34 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     });
     console.log('Message posted to channel successfully');
     
-    // If file was generated successfully, upload it
-    if (fileBuffer) {
-      try {
-        // Format filename
-        const cleanDate = serviceDate.replace(/-/g, '');
-        const filename = `${channelName}_${cleanDate}_inv_issue.${fileExtension}`;
-        
-        console.log(`Uploading ${fileExtension} file directly to job channel ${jobChannelId}`);
-        
-        // Always upload to the job channel for simplicity
-        await client.files.upload({
-          channels: jobChannelId,
-          file: fileBuffer,
-          filename: filename,
-          title: `Material Usage for ${channelName} on ${serviceDate}`,
-          initial_comment: `Material usage report for this job:`
-        });
-        
-        console.log('File uploaded successfully to job channel');
-      } catch (uploadError) {
-        console.error('File upload failed:', uploadError);
-        
-        // Notify user
-        await client.chat.postMessage({
-          channel: userId,
-          text: `⚠️ There was an issue uploading the material usage file. Please try again or contact support.`
-        });
-      }
-    }
+    // Create filename for CSV
+    const cleanDate = serviceDate.replace(/-/g, '');
+    const filename = `${channelName}_${cleanDate}_inv_issue.csv`;
+    
+    // Post the CSV as a text message (not a file upload)
+    console.log('Posting CSV as text to channel:', jobChannelId);
+    await client.chat.postMessage({
+      channel: jobChannelId,
+      text: `Material Usage Report for Acumatica import:`,
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Material Usage Report for Acumatica*\n\nHere's the CSV data to copy/paste into your import file:`
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "```\n" + csvContent + "```"
+          }
+        }
+      ],
+      thread_ts: messageResponse.ts // Post in thread with the main message
+    });
+    console.log('CSV data posted as text');
 
     // Confirm to the user in a DM
     console.log('Sending confirmation to user:', userId);
