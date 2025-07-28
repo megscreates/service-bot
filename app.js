@@ -96,6 +96,12 @@ function formatNumber(num) {
   return parseFloat(num).toFixed(2);
 }
 
+// Helper function to get just the truck number (e.g., "63" from "TRUCK0063")
+function getTruckNumber(truckValue) {
+  // Extract just the digits from the end
+  return truckValue.replace(/^TRUCK00/, '');
+}
+
 // Helper function to generate Acumatica import file
 async function generateAcumaticaImportFile(data) {
   try {
@@ -139,6 +145,36 @@ async function generateAcumaticaImportFile(data) {
     return buffer;
   } catch (error) {
     console.error('Error generating Excel file:', error);
+    throw error;
+  }
+}
+
+// Helper function to generate CSV as a backup option
+async function generateAcumaticaImportCSV(data) {
+  try {
+    // CSV header
+    let csvContent = 'Tran. Type,Branch,Inventory ID,Warehouse,Location,Quantity,UOM,Reason Code,Project Task,Cost Code\n';
+    
+    // Add rows for materials
+    data.materials.forEach(material => {
+      csvContent += [
+        "ISSUE",
+        "11100",
+        material.itemId,
+        "0001",
+        data.serviceTruck,
+        material.quantity,
+        "", // UOM left blank
+        "ISSUE",
+        "13",
+        "0000"
+      ].join(',') + '\n';
+    });
+    
+    // Return as buffer
+    return Buffer.from(csvContent, 'utf8');
+  } catch (error) {
+    console.error('Error generating CSV:', error);
     throw error;
   }
 }
@@ -435,7 +471,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `Selected job: <#${jobChannelId}>`
+          text: `*Job:* <#${jobChannelId}>\n*Service Date:* ${serviceDate}`
         }
       },
       {
@@ -460,16 +496,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
         });
       }
 
-      // Add category header
-      blocks.push({
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*${category.name}*`
-        }
-      });
-
-      // Add multi-select for this category - KEEP THE LABEL FIELD!
+      // Use the category name directly as the label - no separate header needed
       blocks.push({
         type: "input",
         block_id: `category_${categoryIndex}`,
@@ -490,10 +517,9 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
             value: item.id
           }))
         },
-        // Must include this label field even if redundant
         label: {
           type: "plain_text",
-          text: "Materials",
+          text: category.name,
           emoji: true
         }
       });
@@ -652,7 +678,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
             type: "section",
             text: { 
               type: "mrkdwn", 
-              text: `*Job:* <#${jobChannelId}>\n\n*Enter the quantity used for each material:*` 
+              text: `*Job:* <#${jobChannelId}>\n*Service Date:* ${serviceDate}\n\n*Enter the quantity used for each material:*` 
             }
           },
           ...quantityBlocks
@@ -795,7 +821,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Job:* <#${jobChannelId}>`
+              text: `*Job:* <#${jobChannelId}>\n*Service Date:* ${serviceDate}`
             }
           },
           {
@@ -959,6 +985,9 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
     const laborHours = metadata.laborHours;
     const lunchTaken = metadata.lunchTaken;
     
+    // Get the truck number for display
+    const truckNumber = getTruckNumber(serviceTruck);
+    
     // Get job status details
     const jobStatus = view.state.values.job_status.job_status_selected.selected_option.value;
     const billingStatus = view.state.values.billing_status.billing_status_selected.selected_option.value;
@@ -1002,6 +1031,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
           serviceDate,
           serviceTruck,
           serviceTruckText,
+          truckNumber,
           technicians,
           driveHours: formattedDrivePerTech,
           laborHours: formattedLaborPerTech,
@@ -1058,7 +1088,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Service Truck:* ${serviceTruckText}`
+              text: `*Service Truck:* ${truckNumber}`
             }
           },
           {
@@ -1204,7 +1234,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     // Get job details
     const serviceDate = metadata.serviceDate;
     const serviceTruck = metadata.serviceTruck;
-    const serviceTruckText = metadata.serviceTruckText;
+    const truckNumber = metadata.truckNumber;
     const technicians = metadata.technicians;
     const driveHours = metadata.driveHours;
     const laborHours = metadata.laborHours;
@@ -1266,14 +1296,21 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       }))
     };
     
-    // Generate Excel file for Acumatica import
-    let excelBuffer;
+    // Try to generate Excel file first, fall back to CSV if it fails
+    let fileBuffer;
+    let fileExtension = 'xlsx';
     try {
-      excelBuffer = await generateAcumaticaImportFile(acumaticaData);
+      fileBuffer = await generateAcumaticaImportFile(acumaticaData);
       console.log("Excel file generated successfully");
     } catch (excelError) {
-      console.error("Error generating Excel file:", excelError);
-      // Continue with the rest of the function even if Excel fails
+      console.error("Error generating Excel file, trying CSV:", excelError);
+      try {
+        fileBuffer = await generateAcumaticaImportCSV(acumaticaData);
+        fileExtension = 'csv';
+        console.log("CSV generated as fallback");
+      } catch (csvError) {
+        console.error("Error generating CSV file:", csvError);
+      }
     }
 
     // Post the formatted message to the job channel
@@ -1323,7 +1360,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Service Truck:* ${serviceTruckText}`
+            text: `*Service Truck:* ${truckNumber}`
           }
         },
         {
@@ -1429,28 +1466,46 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     });
     console.log('Message posted to channel successfully');
     
-    // If Excel file was generated successfully, upload it
-    if (excelBuffer) {
+    // If file was generated successfully, upload it
+    if (fileBuffer) {
       try {
-        // Format filename: [job channel]_[service date]_inv_issue.xlsx
-        // Clean up date format to remove dashes
+        // Format filename: [job channel]_[service date]_inv_issue.xlsx/csv
         const cleanDate = serviceDate.replace(/-/g, '');
-        const filename = `${channelName}_${cleanDate}_inv_issue.xlsx`;
+        const filename = `${channelName}_${cleanDate}_inv_issue.${fileExtension}`;
         
         // Upload to the import channel or to a specific user
-        const importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL || "#acumatica-imports"; // Set your channel in env vars
+        let importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL;
+        
+        // If environment variable isn't set or is invalid, fall back to the current channel
+        if (!importChannelId || importChannelId.trim() === '') {
+          console.log('No import channel configured, using current job channel');
+          importChannelId = jobChannelId;
+        }
+        
+        console.log(`Uploading ${fileExtension} file to channel ${importChannelId}`);
         
         await client.files.upload({
           channels: importChannelId,
-          file: excelBuffer,
+          file: fileBuffer,
           filename: filename,
           title: `Material Usage for ${channelName} on ${serviceDate}`,
           initial_comment: `Material usage report for <#${jobChannelId}> ready for Acumatica import.`
         });
         
-        console.log('Excel file uploaded successfully');
+        console.log('File uploaded successfully');
       } catch (uploadError) {
-        console.error('Error uploading Excel file:', uploadError);
+        console.error('Error uploading file:', uploadError);
+        console.error('Error details:', uploadError.data || uploadError);
+        
+        // Try to notify the user
+        try {
+          await client.chat.postMessage({
+            channel: userId,
+            text: `⚠️ There was an issue uploading the Acumatica import file. Please check that your bot has the necessary file upload permissions (files:write scope).`
+          });
+        } catch (notifyError) {
+          console.error('Error sending file upload error notification:', notifyError);
+        }
       }
     }
 
