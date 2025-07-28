@@ -96,34 +96,33 @@ async function generateAcumaticaImportFile(data) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Material Issue');
     
-    // Add headers
+    // Add headers for Acumatica import
     worksheet.columns = [
-      { header: 'Date', key: 'date' },
-      { header: 'Job', key: 'job' },
-      { header: 'Item ID', key: 'itemId' },
-      { header: 'Description', key: 'description' },
-      { header: 'Quantity', key: 'quantity' },
-      { header: 'Unit', key: 'unit' },
-      { header: 'Location ID', key: 'locationId' },
-      { header: 'Technician', key: 'technician' },
-      { header: 'Status', key: 'status' },
+      { header: 'Tran. Type', key: 'tranType' },
+      { header: 'Branch', key: 'branch' },      // Added Branch
+      { header: 'Inventory ID', key: 'inventoryId' },
+      { header: 'Warehouse', key: 'warehouse' }, // Added Warehouse 
+      { header: 'Location', key: 'location' },   // Added Location
+      { header: 'Quantity', key: 'quantity' },   // Added Quantity
+      { header: 'UOM', key: 'uom' },
+      { header: 'Reason Code', key: 'reasonCode' },
+      { header: 'Project Task', key: 'projectTask' },
+      { header: 'Cost Code', key: 'costCode' },
     ];
     
     // Add row for each material
     data.materials.forEach(material => {
-      // Get primary technician
-      const primaryTech = data.technicians[0] || data.submittedBy;
-      
       worksheet.addRow({
-        date: data.serviceDate,
-        job: data.jobChannel,
-        itemId: material.itemId,
-        description: material.description,
+        tranType: "ISSUE",
+        branch: "11100",
+        inventoryId: material.itemId,
+        warehouse: "0001",
+        location: data.serviceTruck,
         quantity: material.quantity,
-        unit: material.unit,
-        locationId: data.serviceTruck,
-        technician: primaryTech,
-        status: data.jobStatus,
+        uom: "", // leave blank for now
+        reasonCode: "ISSUE",
+        projectTask: "13",
+        costCode: "0000"
       });
     });
     
@@ -476,12 +475,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
       blocks.push({
         type: "input",
         block_id: `category_${categoryIndex}`, // Use actual category index for consistency
-        // Removed optional: true to remove "(optional)" text
-        label: {
-          type: "plain_text",
-          text: category.name,
-          emoji: true
-        },
+        // Removed label to avoid duplication with the header above
         element: {
           type: "multi_static_select",
           action_id: `materials_${categoryIndex}`,
@@ -904,7 +898,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
               multiline: true,
               placeholder: {
                 type: "plain_text",
-                text: "Describe work performed. For bullet points, use '- ' at the start of each line.",
+                text: "Type the scope of work here...",
                 emoji: true
               },
               action_id: "scope_input"
@@ -1067,7 +1061,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "*Technicians:*\n" + techniciansList
+              text: "*Technicians:*\n\n" + techniciansList
             }
           },
           {
@@ -1152,7 +1146,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
               multiline: true,
               placeholder: {
                 type: "plain_text",
-                text: "Enter any additional notes here. For bullet points, use '- ' at the start of each line.",
+                text: "Enter any additional notes here...",
                 emoji: true
               },
               action_id: "notes_input"
@@ -1332,7 +1326,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "*Technicians:*\n" + techniciansList
+            text: "*Technicians:*\n\n" + techniciansList
           }
         },
         {
@@ -1432,29 +1426,29 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Message posted to channel successfully');
     
     // If Excel file was generated successfully, upload it
-if (excelBuffer) {
-  try {
-    // Format filename: [job channel]_[service date]_inv_issue.xlsx
-    // Clean up date format to remove dashes
-    const cleanDate = serviceDate.replace(/-/g, '');
-    const filename = `${channelName}_${cleanDate}_inv_issue.xlsx`;
-    
-    // Upload to the import channel or to a specific user
-    const importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL || "#acumatica-imports"; // Set your channel in env vars
-    
-    await client.files.upload({
-      channels: importChannelId,
-      file: excelBuffer,
-      filename: filename,
-      title: `Material Usage for ${channelName} on ${serviceDate}`,
-      initial_comment: `Material usage report for <#${jobChannelId}> ready for Acumatica import.`
-    });
-    
-    console.log('Excel file uploaded successfully');
-  } catch (uploadError) {
-    console.error('Error uploading Excel file:', uploadError);
-  }
-}
+    if (excelBuffer) {
+      try {
+        // Format filename: [job channel]_[service date]_inv_issue.xlsx
+        // Clean up date format to remove dashes
+        const cleanDate = serviceDate.replace(/-/g, '');
+        const filename = `${channelName}_${cleanDate}_inv_issue.xlsx`;
+        
+        // Upload to the import channel or to a specific user
+        const importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL || "#acumatica-imports"; // Set your channel in env vars
+        
+        await client.files.upload({
+          channels: importChannelId,
+          file: excelBuffer,
+          filename: filename,
+          title: `Material Usage for ${channelName} on ${serviceDate}`,
+          initial_comment: `Material usage report for <#${jobChannelId}> ready for Acumatica import.`
+        });
+        
+        console.log('Excel file uploaded successfully');
+      } catch (uploadError) {
+        console.error('Error uploading Excel file:', uploadError);
+      }
+    }
 
     // Confirm to the user in a DM
     console.log('Sending confirmation to user:', userId);
