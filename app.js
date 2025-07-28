@@ -344,12 +344,13 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
   }
 });
 
-// STEP 3: Materials Selection Modal Handler
+// STEP 3: Materials Selection Modal Handler - FIXED
 app.view('materials_select_modal', async ({ ack, body, view, client }) => {
   try {
-    await ack();
+    // LOG raw modal values for debugging
     console.log('Raw modal values (materials_select_modal):', JSON.stringify(view.state.values, null, 2));
 
+    // Get previous metadata
     const metadata = JSON.parse(view.private_metadata || '{}');
     const jobChannelId = metadata.jobChannelId;
     const serviceDate = metadata.serviceDate;
@@ -360,6 +361,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     const laborHours = metadata.laborHours;
     const lunchTaken = metadata.lunchTaken;
 
+    // Get selected material IDs from all categories
     const selectedMaterials = [];
     materialCategories.forEach((category, index) => {
       const categoryBlock = view.state.values[`category_${index}`];
@@ -391,6 +393,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
       return;
     }
 
+    // Build quantity entry blocks (one input per material)
     const quantityBlocks = selectedMaterials.map(id => {
       const mat = getMaterialById(id);
       if (!mat) return null;
@@ -414,6 +417,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
       };
     }).filter(block => block !== null);
 
+    // IMPORTANT: Only call ack ONCE, with modal update
     await ack({
       response_action: "update",
       view: {
