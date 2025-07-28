@@ -73,6 +73,16 @@ function getCurrentFormattedDateTime() {
   return `${year}-${month}-${day} at ${hours}:${minutes}`;
 }
 
+// Helper: Format technicians as a list with arrows
+function formatTechniciansList(technicians) {
+  return technicians.map(tech => `»   <@${tech}>`).join('\n');
+}
+
+// Helper function to find category index by name
+function getCategoryIndexByName(name) {
+  return materialCategories.findIndex(category => category.name === name);
+}
+
 // STEP 1: Job Channel + Category Selection + Job Details
 app.command('/materials', async ({ ack, body, client }) => {
   await ack();
@@ -92,6 +102,35 @@ app.command('/materials', async ({ ack, body, client }) => {
       },
       value: `${index}`
     }));
+    
+    // Find indexes of categories to auto-select
+    const everydayBasicsIndex = getCategoryIndexByName("Everyday Basics");
+    const adhesivesIndex = getCategoryIndexByName("Adhesives, Sealants, & Coatings");
+    
+    // Create initial selection options
+    const initialCategories = [];
+    
+    if (everydayBasicsIndex !== -1) {
+      initialCategories.push({
+        text: {
+          type: "plain_text",
+          text: "Everyday Basics",
+          emoji: true
+        },
+        value: `${everydayBasicsIndex}`
+      });
+    }
+    
+    if (adhesivesIndex !== -1) {
+      initialCategories.push({
+        text: {
+          type: "plain_text",
+          text: "Adhesives, Sealants, & Coatings",
+          emoji: true
+        },
+        value: `${adhesivesIndex}`
+      });
+    }
 
     await client.views.open({
       trigger_id: body.trigger_id,
@@ -211,6 +250,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             block_id: "technicians",
             element: {
               type: "multi_users_select",
+              initial_users: [body.user_id], // Auto-include the submitter
               placeholder: {
                 type: "plain_text",
                 text: "Select technicians",
@@ -238,7 +278,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             },
             label: {
               type: "plain_text",
-              text: "Drive Hours (per tech)",
+              text: "Total Drive Hours (per tech)",
               emoji: true
             }
           },
@@ -256,31 +296,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             },
             label: {
               type: "plain_text",
-              text: "Labor Hours (per tech)",
-              emoji: true
-            }
-          },
-          {
-            type: "input",
-            block_id: "lunch",
-            optional: true,
-            element: {
-              type: "checkboxes",
-              options: [
-                {
-                  text: {
-                    type: "plain_text",
-                    text: "Lunch break taken",
-                    emoji: true
-                  },
-                  value: "true"
-                }
-              ],
-              action_id: "lunch_selected"
-            },
-            label: {
-              type: "plain_text",
-              text: "Lunch",
+              text: "Total Labor Hours (per tech)",
               emoji: true
             }
           },
@@ -294,6 +310,7 @@ app.command('/materials', async ({ ack, body, client }) => {
                 text: "Choose categories",
                 emoji: true
               },
+              initial_options: initialCategories,
               options: categoryOptions,
               action_id: "categories_selected"
             },
@@ -332,7 +349,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
     const technicians = view.state.values.technicians.technicians_selected.selected_users || [];
     const driveHours = view.state.values.drive_hours.drive_hours_input.value || "0";
     const laborHours = view.state.values.labor_hours.labor_hours_input.value || "0";
-    const lunchTaken = view.state.values.lunch.lunch_selected.selected_options.length > 0;
+    // Removed lunch checkbox
     
     // Get selected categories
     const selectedCategoryIndexes = view.state.values.categories.categories_selected.selected_options.map(opt => 
@@ -401,14 +418,14 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
         }
       });
 
-      // Add multi-select for this category
+      // Add multi-select for this category with the category name as label
       blocks.push({
         type: "input",
         block_id: `category_${categoryIndex}`, // Use actual category index for consistency
-        optional: true,
+        // Removed optional: true to remove "(optional)" text
         label: {
           type: "plain_text",
-          text: "Select materials",
+          text: category.name,
           emoji: true
         },
         element: {
@@ -447,7 +464,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
           technicians,
           driveHours,
           laborHours,
-          lunchTaken
+          lunchTaken: false // Removed lunch checkbox, default to false
         }),
         title: { type: "plain_text", text: "Select Materials" },
         submit: { type: "plain_text", text: "Next" },
@@ -532,12 +549,15 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
       const mat = getMaterialById(id);
       if (!mat) return null;
       
+      // Simplify 'per each' to just 'each'
+      const unitLabel = mat.unit === 'each' ? 'each' : `per ${getSingularLabel(mat.unit)}`;
+      
       return {
         type: "input",
         block_id: `qty_${id}`,
         label: {
           type: "plain_text",
-          text: `${mat.label}  -  per ${getSingularLabel(mat.unit)}`,
+          text: `${mat.label}  -  ${unitLabel}`,
           emoji: true
         },
         element: {
@@ -898,8 +918,8 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
     // Get current date and time for the timestamp
     const timestamp = getCurrentFormattedDateTime();
     
-    // Format technicians as mentions
-    const technicianMentions = technicians.map(tech => `<@${tech}>`).join(', ') || "None";
+    // Format technicians as a list with arrows
+    const techniciansList = formatTechniciansList(technicians);
     
     // Format the materials with filled circles and proper spacing
     const formattedMaterials = formatMaterialsList(materialsWithQty);
@@ -976,7 +996,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Technicians:* ${technicianMentions}`
+              text: "*Technicians:*\n" + techniciansList
             }
           },
           {
@@ -1035,7 +1055,8 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `»   *Drive Hours:* ${driveHours} per tech (${formattedTotalDrive} total)\n»   *Labor Hours:* ${laborHours} per tech (${formattedTotalLabor} total)\n»   *Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+              text: `»   *Total Drive Hours:* ${driveHours} per tech (${formattedTotalDrive} total)\n»   *Total Labor Hours:* ${laborHours} per tech (${formattedTotalLabor} total)`
+              // Removed lunch taken
             }
           },
           {
@@ -1140,8 +1161,8 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     // Format the materials list with the same helper function
     const formattedMaterials = formatMaterialsList(materialsWithQty);
     
-    // Format technicians as mentions
-    const technicianMentions = technicians.map(tech => `<@${tech}>`).join(', ') || "None";
+    // Format technicians as a list with arrows
+    const techniciansList = formatTechniciansList(technicians);
 
     // Get job channel name for better display
     let channelName = "";
@@ -1204,7 +1225,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Technicians:* ${technicianMentions}`
+            text: "*Technicians:*\n" + techniciansList
           }
         },
         {
@@ -1251,25 +1272,6 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         {
           type: "divider"
         },
-        ...(internalNotes ? [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: `*Internal Notes from <@${userId}>:*`
-            }
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: internalNotes.replace(/- /g, "»   ")
-            }
-          },
-          {
-            type: "divider"
-          }
-        ] : []),
         {
           type: "section",
           text: {
@@ -1281,7 +1283,8 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `»   *Drive Hours:* ${driveHours} per tech (${totalDriveHours} total)\n»   *Labor Hours:* ${laborHours} per tech (${totalLaborHours} total)\n»   *Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+            text: `»   *Total Drive Hours:* ${driveHours} per tech (${totalDriveHours} total)\n»   *Total Labor Hours:* ${laborHours} per tech (${totalLaborHours} total)`
+            // Removed lunch taken
           }
         },
         {
@@ -1301,6 +1304,26 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
             text: formattedMaterials
           }
         },
+        // Moved internal notes to be after materials
+        ...(internalNotes ? [
+          {
+            type: "divider"
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Internal Notes from <@${userId}>:*`
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: internalNotes.replace(/- /g, "»   ")
+            }
+          },
+        ] : []),
         {
           type: "divider"
         }
