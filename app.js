@@ -1276,10 +1276,9 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "divider"
         },
         {
-      type: "image",
-      image_url: "https://github.com/megscreates/service-bot/blob/main/rra%20service%20summary%20banner.png",
-      alt_text: "EOD Service Summary"
-          }
+          type: "image",
+          image_url: "https://github.com/megscreates/service-bot/blob/main/rra%20service%20summary%20banner.png",
+          alt_text: "EOD Service Summary"
         },
         {
           type: "context",
