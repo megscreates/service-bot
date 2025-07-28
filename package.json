@@ -1,12 +1,13 @@
 {
   "name": "slack-bolt-hello-world",
   "version": "1.0.0",
+  "description": "A simple Slack app using the Bolt framework",
   "main": "app.js",
-  "license": "MIT",
-  "dependencies": {
-    "@slack/bolt": "^3.12.2"
-  },
   "scripts": {
     "start": "node app.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.17.0",
+    "express": "^4.18.2"
   }
 }
