@@ -1265,7 +1265,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         },
         {
           type: "image",
-          image_url: "https://your-image-url-here.png",
+          image_url: "https://github.com/megscreates/service-bot/blob/main/rra%20service%20summary%20banner.png?raw=true",
           alt_text: "EOD Service Summary"
         },
         {
