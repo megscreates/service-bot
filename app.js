@@ -55,10 +55,22 @@ function formatMaterialsList(materials) {
     
     // Handle quantity as float now instead of integer
     const qty = parseFloat(mat.qty);
-    materialText += `${prefix}   *${mat.label}* — ${mat.qty} ${getQuantityLabel(mat.unit, qty)}\n\n`;
+    materialText += `${prefix}   *${mat.label}* — ${mat.qty} ${getQuantityLabel(mat.unit, qty)}\n`;
   });
   
   return materialText;
+}
+
+// Helper: Get current time in format YYYY-MM-DD at HH:MM
+function getCurrentFormattedDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} at ${hours}:${minutes}`;
 }
 
 // STEP 1: Job Channel + Category Selection + Job Details
@@ -131,6 +143,66 @@ app.command('/materials', async ({ ack, body, client }) => {
             label: {
               type: "plain_text",
               text: "Service Date",
+              emoji: true
+            }
+          },
+          {
+            type: "input",
+            block_id: "service_truck",
+            element: {
+              type: "static_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select service truck",
+                emoji: true
+              },
+              options: [
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Service Truck 63",
+                    emoji: true
+                  },
+                  value: "TRUCK0063"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Service Truck 64",
+                    emoji: true
+                  },
+                  value: "TRUCK0064"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Service Truck 74",
+                    emoji: true
+                  },
+                  value: "TRUCK0074"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Service Truck 85",
+                    emoji: true
+                  },
+                  value: "TRUCK0085"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Service Truck 91",
+                    emoji: true
+                  },
+                  value: "TRUCK0091"
+                }
+              ],
+              action_id: "service_truck_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Service Truck",
               emoji: true
             }
           },
@@ -255,6 +327,8 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
     
     // Get the new fields
     const serviceDate = view.state.values.service_date.service_date_selected.selected_date;
+    const serviceTruck = view.state.values.service_truck.service_truck_selected.selected_option.value;
+    const serviceTruckText = view.state.values.service_truck.service_truck_selected.selected_option.text.text;
     const technicians = view.state.values.technicians.technicians_selected.selected_users || [];
     const driveHours = view.state.values.drive_hours.drive_hours_input.value || "0";
     const laborHours = view.state.values.labor_hours.labor_hours_input.value || "0";
@@ -368,6 +442,8 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
           selectedCategoryIndexes, // Store for later reference
           // Also store the new fields
           serviceDate,
+          serviceTruck,
+          serviceTruckText,
           technicians,
           driveHours,
           laborHours,
@@ -403,6 +479,8 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     const metadata = JSON.parse(view.private_metadata || '{}');
     const jobChannelId = metadata.jobChannelId;
     const serviceDate = metadata.serviceDate;
+    const serviceTruck = metadata.serviceTruck;
+    const serviceTruckText = metadata.serviceTruckText;
     const technicians = metadata.technicians;
     const driveHours = metadata.driveHours;
     const laborHours = metadata.laborHours;
@@ -487,13 +565,15 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
           user: body.user.id,
           // Pass through the job details
           serviceDate,
+          serviceTruck,
+          serviceTruckText,
           technicians,
           driveHours,
           laborHours,
           lunchTaken
         }),
         title: { type: "plain_text", text: "Enter Quantities" },
-        submit: { type: "plain_text", text: "Review" },
+        submit: { type: "plain_text", text: "Next" },
         close: { type: "plain_text", text: "Cancel" },
         blocks: [
           {
@@ -537,7 +617,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
   }
 });
 
-// -------- STEP 4: Review Modal --------
+// -------- STEP 4: Job Status + Scope of Work Modal --------
 app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
   try {
     console.log('Processing quantities from user:', body.user.id);
@@ -550,21 +630,12 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     
     // Get job details
     const serviceDate = metadata.serviceDate;
+    const serviceTruck = metadata.serviceTruck;
+    const serviceTruckText = metadata.serviceTruckText;
     const technicians = metadata.technicians;
     const driveHours = metadata.driveHours;
     const laborHours = metadata.laborHours;
     const lunchTaken = metadata.lunchTaken;
-    
-    // Calculate total hours based on tech count
-    const techCount = technicians.length || 1;
-    const driveHoursPerTech = parseFloat(driveHours) || 0;
-    const laborHoursPerTech = parseFloat(laborHours) || 0;
-    const totalDriveHours = driveHoursPerTech * techCount;
-    const totalLaborHours = laborHoursPerTech * techCount;
-    
-    // Format to 2 decimal places
-    const formattedTotalDrive = totalDriveHours.toFixed(2);
-    const formattedTotalLabor = totalLaborHours.toFixed(2);
     
     const values = view.state.values;
     
@@ -626,78 +697,144 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
       return;
     }
 
-    // Format technicians as mentions
-    const technicianMentions = technicians.map(tech => `<@${tech}>`).join(', ') || "None";
-    
-    // Format the materials with filled circles and proper spacing
-    const formattedMaterials = formatMaterialsList(materialsWithQty);
-    
-    console.log('Updating view for review');
-
-    // Update the current view
+    // Update view for job status and scope of work
     await ack({
       response_action: "update",
       view: {
         type: "modal",
-        callback_id: "review_modal",
-        private_metadata: JSON.stringify({ 
+        callback_id: "job_status_modal",
+        private_metadata: JSON.stringify({
           materialsWithQty,
-          userId, 
+          userId,
           jobChannelId,
-          // Include job details
           serviceDate,
+          serviceTruck,
+          serviceTruckText,
           technicians,
           driveHours,
           laborHours,
-          lunchTaken,
-          // Include calculated totals
-          totalDriveHours: formattedTotalDrive,
-          totalLaborHours: formattedTotalLabor
+          lunchTaken
         }),
-        title: { type: "plain_text", text: "Review Submission" },
-        submit: { type: "plain_text", text: "Submit" },
+        title: { type: "plain_text", text: "Job Details" },
+        submit: { type: "plain_text", text: "Review" },
         close: { type: "plain_text", text: "Cancel" },
         blocks: [
           {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "*Materials List*"
+              text: `*Job:* <#${jobChannelId}>`
             }
           },
           {
-            type: "context",
-            elements: [
-              {
-                type: "mrkdwn",
-                text: `*Job:* <#${jobChannelId}> • ${serviceDate} • <@${userId}>`
-              }
-            ]
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours} per tech (${formattedTotalDrive} total)\n*Labor Hours:* ${laborHours} per tech (${formattedTotalLabor} total)\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+            type: "input",
+            block_id: "job_status",
+            element: {
+              type: "static_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select job status",
+                emoji: true
+              },
+              options: [
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "100% Complete",
+                    emoji: true
+                  },
+                  value: "100% Complete"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Return Visit Needed",
+                    emoji: true
+                  },
+                  value: "Return Visit Needed"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Need to Reschedule",
+                    emoji: true
+                  },
+                  value: "Need to Reschedule"
+                }
+              ],
+              action_id: "job_status_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Job Status",
+              emoji: true
             }
           },
           {
-            type: "divider"
+            type: "input",
+            block_id: "billing_status",
+            element: {
+              type: "static_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select billing status",
+                emoji: true
+              },
+              options: [
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "100% Billable",
+                    emoji: true
+                  },
+                  value: "100% Billable"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "100% Warranty",
+                    emoji: true
+                  },
+                  value: "100% Warranty"
+                },
+                {
+                  text: {
+                    type: "plain_text",
+                    text: "Partially Billable (See Notes)",
+                    emoji: true
+                  },
+                  value: "Partially Billable (See Notes)"
+                }
+              ],
+              action_id: "billing_status_selected"
+            },
+            label: {
+              type: "plain_text",
+              text: "Billing Status",
+              emoji: true
+            }
           },
           {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: formattedMaterials
+            type: "input",
+            block_id: "scope_of_work",
+            element: {
+              type: "plain_text_input",
+              multiline: true,
+              action_id: "scope_input"
+            },
+            label: {
+              type: "plain_text",
+              text: "Scope of Work",
+              emoji: true
             }
           }
         ]
       }
     });
     
-    console.log('Review modal opened via view update');
+    console.log('Job status modal opened via view update');
   } catch (error) {
-    console.error('Error updating to review modal:', error);
+    console.error('Error updating to job status modal:', error);
     
     // Acknowledge with basic response to prevent timeouts
     await ack({
@@ -719,7 +856,231 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
   }
 });
 
-// -------- STEP 5: Submit and Post to Job Channel --------
+// -------- STEP 5: Review Modal --------
+app.view('job_status_modal', async ({ ack, view, body, client }) => {
+  try {
+    console.log('Processing job status from user:', body.user.id);
+    
+    // Get metadata from previous view
+    const metadata = JSON.parse(view.private_metadata);
+    const { materialsWithQty, userId, jobChannelId } = metadata;
+    
+    // Get job details
+    const serviceDate = metadata.serviceDate;
+    const serviceTruck = metadata.serviceTruck;
+    const serviceTruckText = metadata.serviceTruckText;
+    const technicians = metadata.technicians;
+    const driveHours = metadata.driveHours;
+    const laborHours = metadata.laborHours;
+    const lunchTaken = metadata.lunchTaken;
+    
+    // Get job status details
+    const jobStatus = view.state.values.job_status.job_status_selected.selected_option.value;
+    const billingStatus = view.state.values.billing_status.billing_status_selected.selected_option.value;
+    const scopeOfWork = view.state.values.scope_of_work.scope_input.value;
+    
+    // Calculate total hours based on tech count
+    const techCount = technicians.length || 1;
+    const driveHoursPerTech = parseFloat(driveHours) || 0;
+    const laborHoursPerTech = parseFloat(laborHours) || 0;
+    const totalDriveHours = driveHoursPerTech * techCount;
+    const totalLaborHours = laborHoursPerTech * techCount;
+    
+    // Format to 2 decimal places
+    const formattedTotalDrive = totalDriveHours.toFixed(2);
+    const formattedTotalLabor = totalLaborHours.toFixed(2);
+    
+    // Get current date and time for the timestamp
+    const timestamp = getCurrentFormattedDateTime();
+    
+    // Format technicians as mentions
+    const technicianMentions = technicians.map(tech => `<@${tech}>`).join(', ') || "None";
+    
+    // Format the materials with filled circles and proper spacing
+    const formattedMaterials = formatMaterialsList(materialsWithQty);
+    
+    console.log('Updating view for final review');
+
+    // Update the current view
+    await ack({
+      response_action: "update",
+      view: {
+        type: "modal",
+        callback_id: "review_modal",
+        private_metadata: JSON.stringify({ 
+          materialsWithQty,
+          userId, 
+          jobChannelId,
+          // Include job details
+          serviceDate,
+          serviceTruck,
+          serviceTruckText,
+          technicians,
+          driveHours,
+          laborHours,
+          lunchTaken,
+          // Include calculated totals
+          totalDriveHours: formattedTotalDrive,
+          totalLaborHours: formattedTotalLabor,
+          // Include job status details
+          jobStatus,
+          billingStatus,
+          scopeOfWork,
+          // Timestamp for post
+          timestamp
+        }),
+        title: { type: "plain_text", text: "Review Submission" },
+        submit: { type: "plain_text", text: "Submit" },
+        close: { type: "plain_text", text: "Cancel" },
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "EOD Service Summary",
+              emoji: true
+            }
+          },
+          {
+            type: "context",
+            elements: [
+              {
+                type: "mrkdwn",
+                text: `*Job:* <#${jobChannelId}> • ${serviceDate} • <@${userId}>`
+              }
+            ]
+          },
+          {
+            type: "divider"
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Technicians:* ${technicianMentions}\n*Service Truck:* ${serviceTruckText}\n`
+            }
+          },
+          {
+            type: "divider"
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Job Status:* ${jobStatus}`
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Billing Status:* ${billingStatus}`
+            }
+          },
+          {
+            type: "divider"
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Scope of Work:*"
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "plain_text",
+              text: scopeOfWork || "None provided",
+              emoji: true
+            }
+          },
+          {
+            type: "divider"
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Labor:*"
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `»   *Drive Hours:* ${driveHours} per tech (${formattedTotalDrive} total)\n»   *Labor Hours:* ${laborHours} per tech (${formattedTotalLabor} total)\n»   *Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+            }
+          },
+          {
+            type: "divider"
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Materials:*"
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: formattedMaterials
+            }
+          },
+          {
+            type: "divider"
+          },
+          {
+            type: "input",
+            block_id: "internal_notes",
+            optional: true,
+            element: {
+              type: "plain_text_input",
+              multiline: true,
+              action_id: "notes_input",
+              placeholder: {
+                type: "plain_text",
+                text: "Enter any additional notes here...",
+                emoji: true
+              }
+            },
+            label: {
+              type: "plain_text",
+              text: "Internal Notes",
+              emoji: true
+            }
+          }
+        ]
+      }
+    });
+    
+    console.log('Review modal opened via view update');
+  } catch (error) {
+    console.error('Error updating to review modal:', error);
+    
+    // Acknowledge with basic response to prevent timeouts
+    await ack({
+      response_action: "errors",
+      errors: {
+        "job_status": "Something went wrong. Please try again."
+      }
+    });
+    
+    // Try to notify the user
+    try {
+      await client.chat.postMessage({
+        channel: body.user.id,
+        text: `Sorry, something went wrong. Please try again!`
+      });
+    } catch (notifyError) {
+      console.error('Error sending notification:', notifyError);
+    }
+  }
+});
+
+// -------- STEP 6: Submit and Post to Job Channel --------
 app.view('review_modal', async ({ ack, body, view, client }) => {
   await ack();
   console.log('Review submission acknowledged successfully');
@@ -733,14 +1094,21 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     
     // Get job details
     const serviceDate = metadata.serviceDate;
+    const serviceTruck = metadata.serviceTruck;
+    const serviceTruckText = metadata.serviceTruckText;
     const technicians = metadata.technicians;
     const driveHours = metadata.driveHours;
     const laborHours = metadata.laborHours;
     const lunchTaken = metadata.lunchTaken;
-    
-    // Get calculated totals
     const totalDriveHours = metadata.totalDriveHours;
     const totalLaborHours = metadata.totalLaborHours;
+    const jobStatus = metadata.jobStatus;
+    const billingStatus = metadata.billingStatus;
+    const scopeOfWork = metadata.scopeOfWork;
+    const timestamp = metadata.timestamp;
+    
+    // Get internal notes from the review modal
+    const internalNotes = view.state.values.internal_notes.notes_input.value || "";
     
     console.log(`Posting ${materialsWithQty.length} materials to channel ${jobChannelId}`);
 
@@ -765,16 +1133,17 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Posting message to channel:', jobChannelId);
     await client.chat.postMessage({
       channel: jobChannelId,
-      text: `Materials List for ${channelName} submitted by <@${userId}>`,
+      text: `EOD Service Summary for ${channelName} submitted by <@${userId}>`,
       blocks: [
         {
           type: "divider"
         },
         {
-          type: "section",
+          type: "header",
           text: {
-            type: "mrkdwn",
-            text: "*Materials List*" 
+            type: "plain_text",
+            text: "EOD Service Summary",
+            emoji: true
           }
         },
         {
@@ -787,14 +1156,96 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           ]
         },
         {
+          type: "divider"
+        },
+        {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours} per tech (${totalDriveHours} total)\n*Labor Hours:* ${laborHours} per tech (${totalLaborHours} total)\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+            text: `*Technicians:* ${technicianMentions}\n*Service Truck:* ${serviceTruckText}\n`
           }
         },
         {
           type: "divider"
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Job Status:* ${jobStatus}`
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Billing Status:* ${billingStatus}`
+          }
+        },
+        {
+          type: "divider"
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Scope of Work:*"
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "plain_text",
+            text: scopeOfWork || "None provided",
+            emoji: true
+          }
+        },
+        {
+          type: "divider"
+        },
+        ...(internalNotes ? [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Internal Notes from <@${userId}>:*`
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "plain_text",
+              text: internalNotes,
+              emoji: true
+            }
+          },
+          {
+            type: "divider"
+          }
+        ] : []),
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Labor:*"
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `»   *Drive Hours:* ${driveHours} per tech (${totalDriveHours} total)\n»   *Labor Hours:* ${laborHours} per tech (${totalLaborHours} total)\n»   *Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+          }
+        },
+        {
+          type: "divider"
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Materials:*"
+          }
         },
         {
           type: "section",
@@ -814,13 +1265,13 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Sending confirmation to user:', userId);
     await client.chat.postMessage({
       channel: userId,
-      text: `Materials list submitted to ${channelName}`,
+      text: `EOD Service Summary submitted to ${channelName}`,
       blocks: [
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `✅ Materials list submitted to <#${jobChannelId}>`
+            text: `✅ EOD Service Summary submitted to <#${jobChannelId}>`
           }
         }
       ]
@@ -833,6 +1284,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       jobChannelId,
       submittedBy: userId,
       serviceDate,
+      serviceTruck,
       technicians,
       // Include both per-tech and total hours
       driveHoursPerTech: parseFloat(driveHours) || 0,
@@ -840,6 +1292,12 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       totalDriveHours: parseFloat(totalDriveHours) || 0,
       totalLaborHours: parseFloat(totalLaborHours) || 0,
       lunchTaken,
+      // Include job status info
+      jobStatus,
+      billingStatus,
+      scopeOfWork,
+      internalNotes,
+      timestamp,
       materials: materialsWithQty.map(mat => ({
         itemId: mat.id,
         description: mat.label,
@@ -857,7 +1315,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     try {
       await client.chat.postMessage({
         channel: body.user.id,
-        text: `Sorry, there was an error submitting your materials list. Please try again!`
+        text: `Sorry, there was an error submitting your EOD Service Summary. Please try again!`
       });
     } catch (notifyError) {
       console.error('Error sending notification:', notifyError);
