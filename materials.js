@@ -5,7 +5,7 @@ const materialCategories = [
     items: [
       { id: "INV0017225", label: "Rags", unit: "each" },
       { id: "INV0017337", label: "Garbage Bags", unit: "each" },
-      { id: "INV0017226", label: "Pair of Gloves", unit: "each" },
+      { id: "INV0017226", label: "Gloves", unit: "pair" },
       { id: "INV0017228", label: "Chip Brush", unit: "each" },
       { id: "INV0017414", label: "Masking Tape", unit: "each" },
       { id: "INV0000612", label: "409 Cleaner", unit: "gal" },
@@ -191,7 +191,31 @@ const materialCategories = [
       { id: "INV0000140", label: "JM ISO ENRGY 3 - 1.5\" x 4ft", unit: "square" },
       { id: "INV0000150", label: "JM ISO ENRGY 3 - 2.0\" x 4ft", unit: "square" },
       { id: "INV0000158", label: "JM ISO ENRGY 3 - 2.5\" x 4ft", unit: "square" },
-      { id: "INV0000168", label: "JM ISO ENRGY 3 - 3.0\" x 4ft", unit: "square" }
+      { id: "INV0000168", label: "JM ISO ENRGY 3 - 3.0\" x 4ft", unit: "square" },
+      { id: "INV0000132", label: "JM ISO ENRGY 3 - 1.0\" x 8ft", unit: "square" },
+      { id: "INV0000141", label: "JM ISO ENRGY 3 - 1.5\" x 8ft", unit: "square" },
+      { id: "INV0000151", label: "JM ISO ENRGY 3 - 2.0\" x 8ft", unit: "square" },
+      { id: "INV0000159", label: "JM ISO ENRGY 3 - 2.5\" x 8ft", unit: "square" },
+      { id: "INV0000161", label: "JM ISO ENRGY 3 - 2.6\" x 8ft", unit: "square" },
+      { id: "INV0000169", label: "JM ISO ENRGY 3 - 3.0\" x 8ft", unit: "square" },
+      { id: "INV0001189", label: "JM ISO ENRGY 3 CGF - 2.0\" x 4ft", unit: "square" },
+      { id: "INV0001070", label: "JM ISO Tapered - A  (1/8\")  1.0\"- 1.5\"", unit: "sheet" },
+      { id: "INV0001069", label: "JM ISO Tapered - AA (1/8\")  0.5\"- 1.0\"", unit: "sheet" },
+      { id: "INV0001071", label: "JM ISO Tapered - B  (1/8\")  1.5\"- 2.0\"", unit: "sheet" },
+      { id: "INV0001072", label: "JM ISO Tapered - C  (1/8\")  2.0\"- 2.5\"", unit: "sheet" },
+      { id: "INV0001079", label: "JM ISO Tapered - Q  (1/2\")  0.5\"- 1.0\"", unit: "sheet" },
+      { id: "INV0001076", label: "JM ISO Tapered - X  (1/4\")  0.5\"- 1.5\"", unit: "sheet" },
+      { id: "INV0001077", label: "JM ISO Tapered - Y  (1/4\")  1.5\"- 2.5\"", unit: "sheet" },
+      { id: "INV0001234", label: "JM ISO Tapered CGF - A  (1/8\")  1.0\"- 1.5\"", unit: "sheet" },
+      { id: "INV0001233", label: "JM ISO Tapered CGF - AA (1/8\")  0.5\"- 1.0\"", unit: "sheet" },
+      { id: "INV0001235", label: "JM ISO Tapered CGF - B  (1/8\")  1.5\"- 2.0\"", unit: "sheet" },
+      { id: "INV0001236", label: "JM ISO Tapered CGF - C  (1/8\")  2.0\"- 2.5\"", unit: "sheet" },
+      { id: "INV0001243", label: "JM ISO Tapered CGF - Q  (1/2\")  0.5\"- 1.0\"", unit: "sheet" },
+      { id: "INV0001240", label: "JM ISO Tapered CGF - X  (1/4\")  0.5\"- 1.5\"", unit: "sheet" },
+      { id: "INV0001241", label: "JM ISO Tapered CGF - Y  (1/4\")  1.5\"- 2.5\"", unit: "sheet" },      
+      { id: "INV0001108", label: "Sarnatherm ISO - 2.0\" x 4ft", unit: "square" },
+      { id: "INV0001162", label: "SARNAFIL ISO Tapered - Q  (1/2\")  0.5\"- 1.0\"", unit: "sheet" },
+      { id: "INV0001159", label: "SARNAFIL ISO Tapered - X  (1/4\")  0.5\"- 1.5\"", unit: "sheet" }   
     ]
   },
   {
@@ -216,7 +240,46 @@ const materialCategories = [
       { id: "INV0000408", label: "AP #14 Phillips [3\"]", unit: "each" },
       { id: "INV0000409", label: "AP #14 Phillips [4\"]", unit: "each" },
       { id: "INV0000410", label: "AP #14 Phillips [5\"]", unit: "each" },
-      { id: "INV0000411", label: "AP #14 Phillips [6\"]", unit: "each" }
+      { id: "INV0000411", label: "AP #14 Phillips [6\"]", unit: "each" },
+      { id: "INV0000412", label: "AP #14 Phillips [7\"]", unit: "each" },
+      { id: "INV0000413", label: "AP #14 Phillips [8\"]", unit: "each" },
+      { id: "INV0000414", label: "AP #14 Phillips [9\"]", unit: "each" },
+      { id: "INV0000369", label: "HL #15 Phillips [1.25\"]", unit: "each" },
+      { id: "INV0000371", label: "HL #15 Phillips [3\"]", unit: "each" },
+      { id: "INV0000372", label: "HL #15 Phillips [4\"]", unit: "each" },
+      { id: "INV0000373", label: "HL #15 Phillips [5\"]", unit: "each" },
+      { id: "INV0000374", label: "HL #15 Phillips [6\"]", unit: "each" },
+      { id: "INV0000375", label: "HL #15 Phillips [7\"]", unit: "each" },
+      { id: "INV0000376", label: "HL #15 Phillips [8\"]", unit: "each" },
+      { id: "INV0000377", label: "HL #15 Phillips [9\"]", unit: "each" },
+      { id: "INV0000378", label: "HL #15 Phillips [10\"]", unit: "each" },
+      { id: "INV0000379", label: "HL #15 Phillips [11\"]", unit: "each" },
+      { id: "INV0000380", label: "HL #15 Phillips [12\"]", unit: "each" },
+      { id: "INV0000381", label: "HL #15 Phillips [14\"]", unit: "each" },
+      { id: "INV0000382", label: "HL #15 Phillips [16\"]", unit: "each" },
+      { id: "INV0000383", label: "HL #15 Phillips [18\"]", unit: "each" },
+      { id: "INV0000384", label: "HL #15 Phillips [20\"]", unit: "each" },
+      { id: "INV0000395", label: "HL #15 Plate [2.375\"]", unit: "each" },
+      { id: "INV0000388", label: "XHL #21 Phillips [5\"]", unit: "each" },
+      { id: "INV0000332", label: "UF #12 Fastener [5\"]", unit: "each" },
+      { id: "INV0000334", label: "UF #12 Fastener [7\"]", unit: "each" },
+      { id: "INV0000346", label: "UF #12 Plate [3\"]", unit: "each" },
+      { id: "INV0016991", label: "HP-X Fastener [2.375\"]", unit: "each" },
+      { id: "INV0016992", label: "HP-X Fastener [4\"]", unit: "each" },
+      { id: "INV0016993", label: "HP-X Fastener [5\"]", unit: "each" },
+      { id: "INV0016996", label: "HP-X Fastener [8\"]", unit: "each" },
+      { id: "INV0016979", label: "HP Fastener [1.25\"]", unit: "each" },
+      { id: "INV0016983", label: "HP Fastener [2\"]", unit: "each" },
+      { id: "INV0016984", label: "HP Fastener [3\"]", unit: "each" },
+      { id: "INV0016985", label: "HP Fastener [4\"]", unit: "each" },
+      { id: "INV0016986", label: "HP Fastener [5\"]", unit: "each" },
+      { id: "INV0016987", label: "HP Fastener [6\"]", unit: "each" },
+      { id: "INV0016988", label: "HP Fastener [7\"]", unit: "each" },
+      { id: "INV0016989", label: "HP Fastener [8\"]", unit: "each" },
+      { id: "INV0016990", label: "HP Fastener [9\"]", unit: "each" },
+      { id: "INV0016980", label: "HP Fastener [10\"]", unit: "each" },
+      { id: "INV0016981", label: "HP Fastener [11\"]", unit: "each" },
+      { id: "INV0016982", label: "HP Fastener [12\"]", unit: "each" },
     ]
   }
 ];
@@ -234,6 +297,7 @@ function getPluralLabel(unit) {
     "roll": "rolls",
     "box": "boxes",
     "tube": "tubes"
+    "pair": "pairs"
   };
   return labels[unit] || unit;
 }
@@ -250,7 +314,8 @@ function getSingularLabel(unit) {
     "bundle": "bundle",
     "roll": "roll",
     "box": "box",
-    "tube": "tube"
+    "tube": "tube",
+    "pair": "pair"
   };
   return labels[unit] || unit;
 }
