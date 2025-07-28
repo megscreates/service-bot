@@ -351,12 +351,13 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
             type: "plain_text",
             text: "Enter amount"
           }
-          // No subtype property here - that's what was causing the error!
+          // No subtype property!
         }
       };
     }).filter(block => block !== null);
     
-    // KEY CHANGE: Update view directly in the acknowledgment
+    // IMPORTANT: Use ack() with response_action to update the view directly
+    // Don't try to update separately after acknowledging
     await ack({
       response_action: "update",
       view: {
