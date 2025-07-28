@@ -820,6 +820,11 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
             element: {
               type: "plain_text_input",
               multiline: true,
+              placeholder: {
+                type: "plain_text",
+                text: "Describe work performed. For bullet points, use '- ' at the start of each line.",
+                emoji: true
+              },
               action_id: "scope_input"
             },
             label: {
@@ -946,7 +951,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             elements: [
               {
                 type: "mrkdwn",
-                text: `*Job:* <#${jobChannelId}> • ${serviceDate} • <@${userId}>`
+                text: `*Service Date:* ${serviceDate} • ${serviceTruckText} • *Submitted By:* <@${userId}>`
               }
             ]
           },
@@ -957,7 +962,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Technicians:* ${technicianMentions}\n*Service Truck:* ${serviceTruckText}\n`
+              text: `*Job:* <#${jobChannelId}>\n\n*Technicians:* ${technicianMentions}`
             }
           },
           {
@@ -1039,12 +1044,12 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             element: {
               type: "plain_text_input",
               multiline: true,
-              action_id: "notes_input",
               placeholder: {
                 type: "plain_text",
-                text: "Enter any additional notes here...",
+                text: "Enter any additional notes here. For bullet points, use '- ' at the start of each line.",
                 emoji: true
-              }
+              },
+              action_id: "notes_input"
             },
             label: {
               type: "plain_text",
@@ -1105,7 +1110,6 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     const jobStatus = metadata.jobStatus;
     const billingStatus = metadata.billingStatus;
     const scopeOfWork = metadata.scopeOfWork;
-    const timestamp = metadata.timestamp;
     
     // Get internal notes from the review modal
     const internalNotes = view.state.values.internal_notes.notes_input.value || "";
@@ -1129,6 +1133,9 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       channelName = jobChannelId;
     }
 
+    // Get current timestamp at posting time
+    const currentTimestamp = getCurrentFormattedDateTime();
+
     // Post the formatted message to the job channel
     console.log('Posting message to channel:', jobChannelId);
     await client.chat.postMessage({
@@ -1151,7 +1158,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           elements: [
             {
               type: "mrkdwn",
-              text: `*Job:* <#${jobChannelId}> • ${serviceDate} • <@${userId}>`
+              text: `*Service Date:* ${serviceDate} • ${serviceTruckText} • *Submitted By:* <@${userId}> at ${currentTimestamp}`
             }
           ]
         },
@@ -1162,7 +1169,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Technicians:* ${technicianMentions}\n*Service Truck:* ${serviceTruckText}\n`
+            text: `*Job:* <#${jobChannelId}>\n\n*Technicians:* ${technicianMentions}`
           }
         },
         {
@@ -1195,9 +1202,8 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         {
           type: "section",
           text: {
-            type: "plain_text",
-            text: scopeOfWork || "None provided",
-            emoji: true
+            type: "mrkdwn",
+            text: scopeOfWork ? scopeOfWork.replace(/- /g, "• ") : "None provided"
           }
         },
         {
@@ -1214,9 +1220,8 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           {
             type: "section",
             text: {
-              type: "plain_text",
-              text: internalNotes,
-              emoji: true
+              type: "mrkdwn",
+              text: internalNotes.replace(/- /g, "• ")
             }
           },
           {
@@ -1297,7 +1302,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       billingStatus,
       scopeOfWork,
       internalNotes,
-      timestamp,
+      timestamp: currentTimestamp,
       materials: materialsWithQty.map(mat => ({
         itemId: mat.id,
         description: mat.label,
