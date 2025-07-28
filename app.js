@@ -20,6 +20,13 @@ const app = new App({
   ]
 });
 
+// Add logging middleware to help debug request flow
+app.use(async ({ logger, next }) => {
+  console.log('Request received:', new Date().toISOString());
+  await next();
+  console.log('Request processed:', new Date().toISOString());
+});
+
 // Single consolidated error handler
 app.error(async (error) => {
   console.error('SLACK APP ERROR:', error);
@@ -389,9 +396,13 @@ app.command('/materials', async ({ ack, body, client }) => {
   }
 });
 
-// STEP 2: Show materials from ONLY selected categories
+// STEP 2: Show materials from ONLY selected categories - FIXED VERSION
 app.view('job_and_category_select', async ({ ack, body, view, client }) => {
   try {
+    // First acknowledge quickly to prevent timeout
+    await ack();
+    console.log('Job and category selection acknowledged');
+    
     // Get the selected job channel
     const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
     
@@ -402,31 +413,18 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
     const technicians = view.state.values.technicians.technicians_selected.selected_users || [];
     const driveHours = view.state.values.drive_hours.drive_hours_input.value || "0";
     const laborHours = view.state.values.labor_hours.labor_hours_input.value || "0";
-    // Removed lunch checkbox
     
     // Get selected categories
     const selectedCategoryIndexes = view.state.values.categories.categories_selected.selected_options.map(opt => 
       parseInt(opt.value, 10)
     );
     
-    if (!jobChannelId) {
-      // Error handling for missing job channel
-      await ack({
-        response_action: "errors",
-        errors: {
-          "job_channel": "Please select a job channel"
-        }
-      });
-      return;
-    }
-    
-    if (selectedCategoryIndexes.length === 0) {
-      // Error handling for no categories selected
-      await ack({
-        response_action: "errors",
-        errors: {
-          "categories": "Please select at least one category"
-        }
+    if (!jobChannelId || selectedCategoryIndexes.length === 0) {
+      // Show error message to user
+      await client.chat.postEphemeral({
+        channel: body.user.id,
+        user: body.user.id,
+        text: "Please select a job channel and at least one category"
       });
       return;
     }
@@ -496,23 +494,22 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
       });
     });
 
-    // Update view with only the selected categories
-    await ack({
-      response_action: "update",
+    // Open a new view instead of updating the existing one
+    await client.views.open({
+      trigger_id: body.trigger_id,
       view: {
         type: "modal",
         callback_id: "materials_select_modal",
         private_metadata: JSON.stringify({ 
           jobChannelId,
-          selectedCategoryIndexes, // Store for later reference
-          // Also store the new fields
+          selectedCategoryIndexes,
           serviceDate,
           serviceTruck,
           serviceTruckText,
           technicians,
           driveHours,
           laborHours,
-          lunchTaken: false // Removed lunch checkbox, default to false
+          lunchTaken: false
         }),
         title: { type: "plain_text", text: "Select Materials" },
         submit: { type: "plain_text", text: "Next" },
@@ -523,15 +520,17 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
     
     console.log('Materials selection modal opened with selected categories only');
   } catch (error) {
-    console.error('Error updating to materials selection modal:', error);
+    console.error('Error handling job_and_category_select:', error);
     
-    // Error handling as before
-    await ack({
-      response_action: "errors",
-      errors: {
-        "job_channel": "Something went wrong. Please try again."
-      }
-    });
+    // Try to notify the user about the error
+    try {
+      await client.chat.postMessage({
+        channel: body.user.id,
+        text: `Sorry, something went wrong. Please try again!`
+      });
+    } catch (notifyError) {
+      console.error('Error sending notification:', notifyError);
+    }
   }
 });
 
