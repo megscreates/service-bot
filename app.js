@@ -402,7 +402,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
     console.log('Job and category selection acknowledged');
     
     // Get the selected job channel
-    const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
+    const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_conversation;
     
     // Get the new fields
     const serviceDate = view.state.values.service_date.service_date_selected.selected_date;
