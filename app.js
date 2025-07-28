@@ -1224,18 +1224,13 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
 
     // Format the materials list with the same helper function
     const formattedMaterials = formatMaterialsList(materialsWithQty);
-    
-    // Format technicians as a comma-separated list
     const techniciansList = formatTechniciansList(technicians);
-    
-    // Format scope of work and internal notes as block quotes
-    const formattedScope = scopeOfWork ? 
-      scopeOfWork.split('\n').map(line => `> ${line}`).join('\n') : 
-      "> None provided";
-    
-    const formattedNotes = internalNotes ? 
-      internalNotes.split('\n').map(line => `> ${line}`).join('\n') : 
-      "";
+    const formattedScope = scopeOfWork
+      ? scopeOfWork.split('\n').map(line => `> ${line}`).join('\n')
+      : "> None provided";
+    const formattedNotes = internalNotes
+      ? internalNotes.split('\n').map(line => `> ${line}`).join('\n')
+      : "";
 
     // Get job channel name for better display
     let channelName = "";
@@ -1247,11 +1242,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       console.error("Couldn't get channel info:", error);
       channelName = jobChannelId;
     }
-
-    // Get current timestamp at posting time
     const currentTimestamp = getCurrentFormattedDateTime();
-    
-    // Generate CSV data
     const acumaticaData = {
       serviceTruck,
       materials: materialsWithQty.map(mat => ({
@@ -1261,13 +1252,10 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         unit: mat.unit
       }))
     };
-    
-    // Generate CSV string
     const csvContent = generateAcumaticaImportCSV(acumaticaData);
     console.log("CSV generated successfully");
 
-    // Post the formatted message to the job channel
-    console.log('Posting message to channel:', jobChannelId);
+    // ====== IMAGE HEADER BLOCK ADDED HERE ======
     const messageResponse = await client.chat.postMessage({
       channel: jobChannelId,
       text: `EOD Service Summary for ${channelName} submitted by <@${userId}>`,
@@ -1277,7 +1265,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
         },
         {
           type: "image",
-          image_url: "https://github.com/megscreates/service-bot/blob/main/rra%20service%20summary%20banner.png",
+          image_url: "https://your-image-url-here.png",
           alt_text: "EOD Service Summary"
         },
         {
@@ -1388,7 +1376,6 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
             text: formattedMaterials
           }
         },
-        // Moved internal notes to be after materials
         ...(internalNotes ? [
           {
             type: "divider"
