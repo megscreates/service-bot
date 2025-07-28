@@ -335,11 +335,9 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     // Build material/quantity list and validate
     let hasError = false;
     const errorBlocks = {};
-    const materialsWithQty = [];
-    
-    for (const id of selectedIds) {
+    const materialsWithQty = selectedIds.map(id => {
       const mat = getMaterialById(id);
-      if (!mat) continue;
+      if (!mat) return null;
       
       const qtyBlock = values[`qty_${id}`];
       const qtyRaw = qtyBlock ? qtyBlock.quantity_input.value : null;
@@ -348,15 +346,15 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
       if (isNaN(qty) || qty < 1 || !/^\d+$/.test(qtyRaw)) {
         hasError = true;
         errorBlocks[`qty_${id}`] = "Enter a positive whole number (1+)";
-      } else {
-        materialsWithQty.push({
-          id,
-          label: mat.label,
-          unit: mat.unit,
-          qty: qtyRaw
-        });
       }
-    }
+
+      return {
+        id,
+        label: mat.label,
+        unit: mat.unit,
+        qty: qtyRaw
+      };
+    }).filter(mat => mat !== null);
 
     if (hasError) {
       // Return validation errors
@@ -372,16 +370,12 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10);
     
-    // SIMPLIFY: Just create a basic review view first
-    console.log('Creating simplified review view');
+    // Format the materials with filled circles and proper spacing
+    const formattedMaterials = formatMaterialsList(materialsWithQty);
     
-    // Create a simplified version of the materials list text
-    let materialsText = "";
-    materialsWithQty.forEach(mat => {
-      materialsText += `• ${mat.label}: ${mat.qty}\n`;
-    });
-    
-    // Update the current view with a simpler version first
+    console.log('Updating view for review');
+
+    // KEY CHANGE: Update the current view instead of opening a new one
     await ack({
       response_action: "update",
       view: {
@@ -401,32 +395,44 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Job Channel:* <#${jobChannelId}>`
+              text: "*Materials List*"
             }
+          },
+          {
+            type: "context",
+            elements: [
+              {
+                type: "mrkdwn",
+                text: `*Job:* <#${jobChannelId}> • ${dateStr} • <@${userId}>`
+              }
+            ]
+          },
+          {
+            type: "divider"
           },
           {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "*Materials List:*\n" + materialsText
+              text: formattedMaterials
             }
           }
         ]
       }
     });
     
-    console.log('Review modal opened via simple view update');
+    console.log('Review modal opened via view update');
   } catch (error) {
     console.error('Error updating to review modal:', error);
     
-    // Basic acknowledgment to prevent timeout
+    // Acknowledge with basic response to prevent timeouts
     await ack();
     
     // Try to notify the user
     try {
       await client.chat.postMessage({
         channel: body.user.id,
-        text: `Sorry, something went wrong with the review. Error: ${error.message}`
+        text: `Sorry, something went wrong when processing quantities. Please try again!`
       });
     } catch (notifyError) {
       console.error('Error sending notification:', notifyError);
@@ -467,6 +473,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Posting message to channel:', jobChannelId);
     await client.chat.postMessage({
       channel: jobChannelId,
+      text: `Materials List for ${channelName} submitted by <@${userId}>`, // Added fallback text
       blocks: [
         {
           type: "divider" // Added divider above the Materials List header
@@ -508,6 +515,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Sending confirmation to user:', userId);
     await client.chat.postMessage({
       channel: userId,
+      text: `Materials list submitted to ${channelName}`, // Added fallback text
       blocks: [
         {
           type: "section",
