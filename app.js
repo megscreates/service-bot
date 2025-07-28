@@ -1432,28 +1432,29 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Message posted to channel successfully');
     
     // If Excel file was generated successfully, upload it
-    if (excelBuffer) {
-      try {
-        // Create a filename with date, job, and user
-        const date = serviceDate.replace(/-/g, '');
-        const filename = `${date}_${channelName}_materials_${userId}.xlsx`;
-        
-        // Upload to the import channel or to a specific user
-        const importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL || "#acumatica-imports"; // Set your channel in env vars
-        
-        await client.files.upload({
-          channels: importChannelId,
-          file: excelBuffer,
-          filename: filename,
-          title: `Material Usage for ${channelName} on ${serviceDate}`,
-          initial_comment: `Material usage report generated from EOD submission by <@${userId}> for <#${jobChannelId}>.`
-        });
-        
-        console.log('Excel file uploaded successfully');
-      } catch (uploadError) {
-        console.error('Error uploading Excel file:', uploadError);
-      }
-    }
+if (excelBuffer) {
+  try {
+    // Format filename: [job channel]_[service date]_inv_issue.xlsx
+    // Clean up date format to remove dashes
+    const cleanDate = serviceDate.replace(/-/g, '');
+    const filename = `${channelName}_${cleanDate}_inv_issue.xlsx`;
+    
+    // Upload to the import channel or to a specific user
+    const importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL || "#acumatica-imports"; // Set your channel in env vars
+    
+    await client.files.upload({
+      channels: importChannelId,
+      file: excelBuffer,
+      filename: filename,
+      title: `Material Usage for ${channelName} on ${serviceDate}`,
+      initial_comment: `Material usage report for <#${jobChannelId}> ready for Acumatica import.`
+    });
+    
+    console.log('Excel file uploaded successfully');
+  } catch (uploadError) {
+    console.error('Error uploading Excel file:', uploadError);
+  }
+}
 
     // Confirm to the user in a DM
     console.log('Sending confirmation to user:', userId);
