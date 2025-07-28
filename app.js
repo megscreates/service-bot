@@ -349,8 +349,8 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
           placeholder: {
             type: "plain_text",
             text: "Enter amount"
-          },
-          subtype: "number" // This triggers the number pad keyboard on mobile
+          }
+          // Removed subtype: "number" as it's causing the API error
         }
       };
     }).filter(block => block !== null);
