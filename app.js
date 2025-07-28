@@ -1276,11 +1276,9 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "divider"
         },
         {
-          type: "header",
-          text: {
-            type: "plain_text",
-            text: "EOD Service Summary",
-            emoji: true
+      type: "image",
+      image_url: "https://github.com/megscreates/service-bot/blob/main/rra%20service%20summary%20banner.png",
+      alt_text: "EOD Service Summary"
           }
         },
         {
