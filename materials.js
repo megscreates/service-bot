@@ -163,7 +163,7 @@ const materialCategories = [
     ]
   },
   {
-    name: "Boards & ISO",
+    name: "Boards",
     items: [
       { id: "INV0001251", label: "OSB - 7/16\" x 8ft", unit: "sheet" },
       { id: "INV0001258", label: "OSB - 3/4\" x 8ft", unit: "sheet" },
@@ -184,7 +184,12 @@ const materialCategories = [
       { id: "INV0000692", label: "Securock Board - 1/4\" x 8ft", unit: "square" },
       { id: "INV0000696", label: "Securock Board - 1/2\" x 8ft", unit: "square" },
       { id: "INV0000702", label: "DensDeck Prime Board - 1/2\" x 8ft", unit: "square" },
-      { id: "INV0000704", label: "DensDeck Prime Board - 5/8\" x 8ft", unit: "square" },
+      { id: "INV0000704", label: "DensDeck Prime Board - 5/8\" x 8ft", unit: "square" }
+      ]
+  },
+  {
+    name:"ISO",
+    items: [
       { id: "INV0017061", label: "JM All-Purpose - 1.5\" x 8ft", unit: "square" },
       { id: "INV0000130", label: "JM ISO ENRGY - 3.5\" x 8ft", unit: "square" },
       { id: "INV0000131", label: "JM ISO ENRGY 3 - 1.0\" x 4ft", unit: "square" },
