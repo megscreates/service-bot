@@ -393,14 +393,54 @@ app.command('/service', async ({ ack, body, client }) => {
   }
 });
 
-// Keep the old command as a backup during transition
-app.command('/materials', async ({ ack, body, client }) => {
-  await ack();
-  await client.chat.postEphemeral({
-    channel: body.channel_id,
-    user: body.user_id,
-    text: "We've moved to a new command! Please use `/service checkout` instead."
-  });
+// STEP 1 Modal Handler with Logging
+app.view('job_and_category_select', async ({ ack, body, view, client }) => {
+  try {
+    await ack();
+    // ---- LOG ADDED HERE ----
+    console.log('Raw modal values:', JSON.stringify(view.state.values, null, 2));
+    console.log('Job and category selection acknowledged');
+    
+    // Get the selected job channel
+    const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
+    
+    // Get the new fields
+    const serviceDate = view.state.values.service_date.service_date_selected.selected_date;
+    const serviceTruck = view.state.values.service_truck.service_truck_selected.selected_option.value;
+    const serviceTruckText = view.state.values.service_truck.service_truck_selected.selected_option.text.text;
+    const technicians = view.state.values.technicians.technicians_selected.selected_users || [];
+    const driveHours = view.state.values.drive_hours.drive_hours_input.value || "0";
+    const laborHours = view.state.values.labor_hours.labor_hours_input.value || "0";
+    
+    // Get selected categories
+    const selectedCategoryIndexes = view.state.values.categories.categories_selected.selected_options.map(opt => 
+      parseInt(opt.value, 10)
+    );
+    
+    if (!jobChannelId || selectedCategoryIndexes.length === 0) {
+      // Show error message to user
+      await client.chat.postEphemeral({
+        channel: body.user.id,
+        user: body.user.id,
+        text: "Please select a job channel and at least one category"
+      });
+      return;
+    }
+
+    // ...rest of your code to open the next modal step...
+  } catch (error) {
+    console.error('Error handling job_and_category_select:', error);
+    
+    // Try to notify the user about the error
+    try {
+      await client.chat.postMessage({
+        channel: body.user.id,
+        text: `Sorry, something went wrong. Please try again!`
+      });
+    } catch (notifyError) {
+      console.error('Error sending notification:', notifyError);
+    }
+  }
 });
 
 // STEP 2: Show materials from ONLY selected categories - FIXED VERSION
