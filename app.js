@@ -459,13 +459,7 @@ app.view('job_and_category_select', async ({ ack, body, view, client }) => {
     // Add ONLY the selected categories as separate multi-select inputs
     selectedCategoryIndexes.forEach((categoryIndex, index) => {
       const category = materialCategories[categoryIndex];
-      
-      // Add a divider between categories
-      if (index > 0) {
-        blocks.push({
-          type: "divider"
-        });
-      }
+    
 
       // Use the category name directly as the label - no separate header needed
       blocks.push({
@@ -649,7 +643,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
             type: "section",
             text: { 
               type: "mrkdwn", 
-              text: `*Job:* <#${jobChannelId}>\n*Service Date:* ${serviceDate}\n\n*Enter the quantity used for each material:*` 
+              text: `*Job:* <#${jobChannelId}>\n\n*Service Date:* ${serviceDate}\n\n*Enter the quantity used for each material:*` 
             }
           },
           ...quantityBlocks
@@ -792,7 +786,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Job:* <#${jobChannelId}>\n*Service Date:* ${serviceDate}`
+              text: `*Job:* <#${jobChannelId}>\n\n*Service Date:* ${serviceDate}`
             }
           },
           {
