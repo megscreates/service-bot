@@ -195,26 +195,27 @@ app.command('/service', async ({ ack, body, client }) => {
               }
             },
             {
-              type: "input",
-              block_id: "job_channel",
-              element: {
-                type: "conversations_select",
-                placeholder: {
-                  type: "plain_text",
-                  text: "Select a job channel",
-                  emoji: true
-                },
-                action_id: "job_channel_selected",
-                  filter: {
-                  include: ["public", "private"], 
-                  exclude_bot_users: true
-                }
-              },
-              label: {
+            type: "input",
+            block_id: "job_channel",
+            element: {
+              type: "conversations_select",
+              placeholder: {
                 type: "plain_text",
-                text: "Job Channel",
+                text: "Select a job channel",
                 emoji: true
+              },
+              action_id: "job_channel_selected",
+              filter: {
+                include: ["public", "private"], 
+                exclude_bot_users: true
+              }
             },
+            label: {
+              type: "plain_text",
+              text: "Job Channel",
+              emoji: true
+            }
+          },
             {
               type: "input",
               block_id: "service_date",
