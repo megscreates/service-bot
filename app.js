@@ -6,7 +6,12 @@ const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   socketMode: !!process.env.SLACK_APP_TOKEN,
-  appToken: process.env.SLACK_APP_TOKEN
+  appToken: process.env.SLACK_APP_TOKEN,
+  // Add these for more reliable socket connections:
+  socketMode: {
+    reconnectOnError: true,
+    reconnect: true
+  }
 });
 
 // Error logging
@@ -87,20 +92,38 @@ app.command('/materials', async ({ ack, body, client }) => {
     });
   } catch (err) {
     console.error('Error opening job channel selection modal:', err);
+    
+    // Try to notify the user about the error
+    try {
+      await client.chat.postMessage({
+        channel: body.user_id,
+        text: `Sorry, something went wrong. Please try again!`
+      });
+    } catch (dmError) {
+      console.error('Error sending error notification:', dmError);
+    }
   }
 });
 
 // -------- STEP 2: Materials Selection Modal (with categories) --------
 app.view('job_channel_select', async ({ ack, body, view, client }) => {
-  await ack();
-  console.log('Channel selection acknowledged successfully');
-  
   try {
     console.log('Processing channel selection from user:', body.user.id);
     
     // Get the selected job channel
     const jobChannelId = view.state.values.job_channel.job_channel_selected.selected_channel;
     console.log('Selected job channel:', jobChannelId);
+    
+    if (!jobChannelId) {
+      // Missing channel selection - shouldn't happen but just in case
+      await ack({
+        response_action: "errors",
+        errors: {
+          "job_channel": "Please select a job channel"
+        }
+      });
+      return;
+    }
     
     // Create blocks for each category
     const blocks = [
@@ -140,7 +163,7 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
         }
       });
 
-      // Add multi-select for this category - no longer limiting to 10 items
+      // Add multi-select for this category
       blocks.push({
         type: "input",
         block_id: `category_${index}`,
@@ -170,9 +193,9 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
       });
     });
 
-    // Open materials selection modal
-    await client.views.open({
-      trigger_id: body.trigger_id,
+    // Use view update pattern here too for reliability
+    await ack({
+      response_action: "update",
       view: {
         type: "modal",
         callback_id: "materials_select_modal",
@@ -184,11 +207,19 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
       }
     });
     
-    console.log('Materials selection modal opened successfully');
+    console.log('Materials selection modal opened via view update');
   } catch (error) {
-    console.error('Error opening materials selection modal:', error);
+    console.error('Error updating to materials selection modal:', error);
     
-    // Try to notify the user about the error
+    // Acknowledge with basic response to prevent timeouts
+    await ack({
+      response_action: "errors",
+      errors: {
+        "job_channel": "Something went wrong. Please try again."
+      }
+    });
+    
+    // Try to notify the user
     try {
       await client.chat.postMessage({
         channel: body.user.id,
@@ -434,7 +465,12 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     console.error('Error updating to review modal:', error);
     
     // Acknowledge with basic response to prevent timeouts
-    await ack();
+    await ack({
+      response_action: "errors",
+      errors: {
+        "qty_": "Something went wrong. Please try again."
+      }
+    });
     
     // Try to notify the user
     try {
@@ -480,10 +516,10 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Posting message to channel:', jobChannelId);
     await client.chat.postMessage({
       channel: jobChannelId,
-      text: `Materials List for ${channelName} submitted by <@${userId}>`, // Added fallback text
+      text: `Materials List for ${channelName} submitted by <@${userId}>`,
       blocks: [
         {
-          type: "divider" // Added divider above the Materials List header
+          type: "divider"
         },
         {
           type: "section",
@@ -512,7 +548,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           }
         },
         {
-          type: "divider" // Added divider at the end
+          type: "divider"
         }
       ]
     });
@@ -522,7 +558,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     console.log('Sending confirmation to user:', userId);
     await client.chat.postMessage({
       channel: userId,
-      text: `Materials list submitted to ${channelName}`, // Added fallback text
+      text: `Materials list submitted to ${channelName}`,
       blocks: [
         {
           type: "section",
