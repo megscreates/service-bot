@@ -1466,24 +1466,21 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     });
     console.log('Message posted to channel successfully');
     
-    // If file was generated successfully, upload it
-    if (fileBuffer) {
+// If file was generated successfully, upload it
+if (fileBuffer) {
+  try {
+    // Format filename
+    const cleanDate = serviceDate.replace(/-/g, '');
+    const filename = `${channelName}_${cleanDate}_inv_issue.${fileExtension}`;
+    
+    // Try target channel first, then job channel as fallback
+    let importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL;
+    let uploadSucceeded = false;
+    
+    // First try the configured import channel
+    if (importChannelId && importChannelId.trim() !== '') {
       try {
-        // Format filename: [job channel]_[service date]_inv_issue.xlsx/csv
-        const cleanDate = serviceDate.replace(/-/g, '');
-        const filename = `${channelName}_${cleanDate}_inv_issue.${fileExtension}`;
-        
-        // Upload to the import channel or to a specific user
-        let importChannelId = process.env.ACUMATICA_IMPORT_CHANNEL;
-        
-        // If environment variable isn't set or is invalid, fall back to the current channel
-        if (!importChannelId || importChannelId.trim() === '') {
-          console.log('No import channel configured, using current job channel');
-          importChannelId = jobChannelId;
-        }
-        
-        console.log(`Uploading ${fileExtension} file to channel ${importChannelId}`);
-        
+        console.log(`Trying to upload to configured channel ${importChannelId}`);
         await client.files.upload({
           channels: importChannelId,
           file: fileBuffer,
@@ -1491,23 +1488,39 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           title: `Material Usage for ${channelName} on ${serviceDate}`,
           initial_comment: `Material usage report for <#${jobChannelId}> ready for Acumatica import.`
         });
-        
-        console.log('File uploaded successfully');
-      } catch (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        console.error('Error details:', uploadError.data || uploadError);
-        
-        // Try to notify the user
-        try {
-          await client.chat.postMessage({
-            channel: userId,
-            text: `⚠️ There was an issue uploading the Acumatica import file. Please check that your bot has the necessary file upload permissions (files:write scope).`
-          });
-        } catch (notifyError) {
-          console.error('Error sending file upload error notification:', notifyError);
+        uploadSucceeded = true;
+        console.log('File uploaded successfully to import channel');
+      } catch (importChannelError) {
+        console.log('Could not upload to import channel, will try job channel');
+        if (importChannelError.data && importChannelError.data.error === 'not_in_channel') {
+          // Specific handling for not_in_channel error
+          console.log('Bot is not in the import channel - need to invite the bot first');
         }
       }
     }
+    
+    // If import channel failed, try job channel as fallback
+    if (!uploadSucceeded) {
+      console.log(`Falling back to job channel ${jobChannelId} for file upload`);
+      await client.files.upload({
+        channels: jobChannelId, // Use job channel as fallback
+        file: fileBuffer,
+        filename: filename,
+        title: `Material Usage for ${channelName} on ${serviceDate}`,
+        initial_comment: `Material usage report ready for Acumatica import.`
+      });
+      console.log('File uploaded successfully to job channel');
+    }
+  } catch (uploadError) {
+    console.error('All file upload attempts failed:', uploadError);
+    
+    // Notify user
+    await client.chat.postMessage({
+      channel: userId,
+      text: `⚠️ There was an issue uploading the Acumatica import file. Please make sure the bot is invited to the target channel with \`/invite @service-bot\`.`
+    });
+  }
+}
 
     // Confirm to the user in a DM
     console.log('Sending confirmation to user:', userId);
