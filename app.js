@@ -166,7 +166,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             },
             label: {
               type: "plain_text",
-              text: "Total Drive Hours",
+              text: "Drive Hours (per tech)",
               emoji: true
             }
           },
@@ -184,7 +184,7 @@ app.command('/materials', async ({ ack, body, client }) => {
             },
             label: {
               type: "plain_text",
-              text: "Total Labor Hours",
+              text: "Labor Hours (per tech)",
               emoji: true
             }
           },
@@ -555,6 +555,17 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
     const laborHours = metadata.laborHours;
     const lunchTaken = metadata.lunchTaken;
     
+    // Calculate total hours based on tech count
+    const techCount = technicians.length || 1;
+    const driveHoursPerTech = parseFloat(driveHours) || 0;
+    const laborHoursPerTech = parseFloat(laborHours) || 0;
+    const totalDriveHours = driveHoursPerTech * techCount;
+    const totalLaborHours = laborHoursPerTech * techCount;
+    
+    // Format to 2 decimal places
+    const formattedTotalDrive = totalDriveHours.toFixed(2);
+    const formattedTotalLabor = totalLaborHours.toFixed(2);
+    
     const values = view.state.values;
     
     console.log(`Processing ${selectedIds.length} materials with quantities`);
@@ -638,7 +649,10 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
           technicians,
           driveHours,
           laborHours,
-          lunchTaken
+          lunchTaken,
+          // Include calculated totals
+          totalDriveHours: formattedTotalDrive,
+          totalLaborHours: formattedTotalLabor
         }),
         title: { type: "plain_text", text: "Review Submission" },
         submit: { type: "plain_text", text: "Submit" },
@@ -664,7 +678,7 @@ app.view('quantity_entry_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours}\n*Labor Hours:* ${laborHours}\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+              text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours} per tech (${formattedTotalDrive} total)\n*Labor Hours:* ${laborHours} per tech (${formattedTotalLabor} total)\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
             }
           },
           {
@@ -724,6 +738,10 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
     const laborHours = metadata.laborHours;
     const lunchTaken = metadata.lunchTaken;
     
+    // Get calculated totals
+    const totalDriveHours = metadata.totalDriveHours;
+    const totalLaborHours = metadata.totalLaborHours;
+    
     console.log(`Posting ${materialsWithQty.length} materials to channel ${jobChannelId}`);
 
     // Format the materials list with the same helper function
@@ -772,7 +790,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours}\n*Labor Hours:* ${laborHours}\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
+            text: `*Technicians:* ${technicianMentions}\n*Drive Hours:* ${driveHours} per tech (${totalDriveHours} total)\n*Labor Hours:* ${laborHours} per tech (${totalLaborHours} total)\n*Lunch Taken:* ${lunchTaken ? 'Yes' : 'No'}`
           }
         },
         {
@@ -816,8 +834,11 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
       submittedBy: userId,
       serviceDate,
       technicians,
-      driveHours: parseFloat(driveHours) || 0,
-      laborHours: parseFloat(laborHours) || 0,
+      // Include both per-tech and total hours
+      driveHoursPerTech: parseFloat(driveHours) || 0,
+      laborHoursPerTech: parseFloat(laborHours) || 0,
+      totalDriveHours: parseFloat(totalDriveHours) || 0,
+      totalLaborHours: parseFloat(totalLaborHours) || 0,
       lunchTaken,
       materials: materialsWithQty.map(mat => ({
         itemId: mat.id,
