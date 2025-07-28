@@ -951,7 +951,7 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             elements: [
               {
                 type: "mrkdwn",
-                text: `*Service Date:* ${serviceDate} • ${serviceTruckText} • *Submitted By:* <@${userId}>`
+                text: `*Submitted By:* <@${userId}> at ${timestamp}`
               }
             ]
           },
@@ -962,7 +962,28 @@ app.view('job_status_modal', async ({ ack, view, body, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Job:* <#${jobChannelId}>\n\n*Technicians:* ${technicianMentions}`
+              text: `*Job:* <#${jobChannelId}>`
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Service Date:* ${serviceDate}`
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Technicians:* ${technicianMentions}`
+            }
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Service Truck:* ${serviceTruckText}`
             }
           },
           {
@@ -1158,7 +1179,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           elements: [
             {
               type: "mrkdwn",
-              text: `*Service Date:* ${serviceDate} • ${serviceTruckText} • *Submitted By:* <@${userId}> at ${currentTimestamp}`
+              text: `*Submitted By:* <@${userId}> at ${currentTimestamp}`
             }
           ]
         },
@@ -1169,7 +1190,28 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Job:* <#${jobChannelId}>\n\n*Technicians:* ${technicianMentions}`
+            text: `*Job:* <#${jobChannelId}>`
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Service Date:* ${serviceDate}`
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Technicians:* ${technicianMentions}`
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Service Truck:* ${serviceTruckText}`
           }
         },
         {
@@ -1203,7 +1245,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: scopeOfWork ? scopeOfWork.replace(/- /g, "• ") : "None provided"
+            text: scopeOfWork ? scopeOfWork.replace(/- /g, "»   ") : "None provided"
           }
         },
         {
@@ -1221,7 +1263,7 @@ app.view('review_modal', async ({ ack, body, view, client }) => {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: internalNotes.replace(/- /g, "• ")
+              text: internalNotes.replace(/- /g, "»   ")
             }
           },
           {
