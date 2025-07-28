@@ -202,9 +202,6 @@ app.view('job_channel_select', async ({ ack, body, view, client }) => {
 
 // -------- STEP 3: Quantity Entry Modal --------
 app.view('materials_select_modal', async ({ ack, body, view, client }) => {
-  await ack();
-  console.log('Materials selection acknowledged successfully');
-  
   try {
     console.log('Processing materials selection from user:', body.user.id);
     
@@ -230,21 +227,24 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
     console.log(`Selected ${selectedMaterials.length} materials`);
 
     if (selectedMaterials.length === 0) {
-      // No materials selected, notify the user
-      console.log('No materials selected, notifying user');
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: "Please select at least one material and try again."
+      // No materials selected - error
+      await ack({
+        response_action: "errors",
+        errors: {
+          "category_0": "Please select at least one material"
+        }
       });
       return;
     }
     
-    // Add check for maximum items
+    // Add check for maximum items - keeping to 20 for now
     if (selectedMaterials.length > 20) {
-      console.log('Too many materials selected, notifying user');
-      await client.chat.postMessage({
-        channel: body.user.id,
-        text: "Please select no more than 20 materials and try again."
+      // Too many materials - error
+      await ack({
+        response_action: "errors",
+        errors: {
+          "category_0": "Please select no more than 20 materials"
+        }
       });
       return;
     }
@@ -265,8 +265,7 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
         element: {
           type: "plain_text_input",
           action_id: "quantity_input",
-          // Add input_type: "number" for mobile numeric keyboard
-          initial_value: "1", // Default to 1 as a starting value
+          initial_value: "1", // Default to 1 for convenience
           placeholder: {
             type: "plain_text",
             text: "Enter amount"
@@ -275,9 +274,9 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
       };
     }).filter(block => block !== null);
     
-    // Open quantity modal
-    await client.views.open({
-      trigger_id: body.trigger_id,
+    // KEY CHANGE: Update the current view instead of opening a new modal
+    await ack({
+      response_action: "update",
       view: {
         type: "modal",
         callback_id: "quantity_entry_modal",
@@ -302,9 +301,18 @@ app.view('materials_select_modal', async ({ ack, body, view, client }) => {
       }
     });
     
-    console.log('Quantity entry modal opened successfully');
+    console.log('Quantity entry modal opened via view update');
   } catch (error) {
-    console.error('Error opening quantity entry modal:', error);
+    console.error('Error updating to quantity entry modal:', error);
+    console.error('Full error details:', JSON.stringify(error, null, 2));
+    
+    // Acknowledge with basic response to prevent timeouts
+    await ack({
+      response_action: "errors",
+      errors: {
+        "category_0": "Something went wrong. Please try again."
+      }
+    });
     
     // Try to notify the user
     try {
